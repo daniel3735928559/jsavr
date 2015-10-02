@@ -1,0 +1,20 @@
+<html>
+  <head>
+    <title>AVR</title>
+    <link rel="stylesheet" type="text/css" href="/sim/py/sim.css" />
+    <link rel="stylesheet" type="text/css" href="/sim/quest/quest.css" />
+    <link rel="stylesheet" href="/sim/cm/codemirror.css" />
+    <link rel="stylesheet" href="/sim/cm/theme/paraiso-light.css" />
+    <script type="text/javascript" src="https://code.angularjs.org/1.4.0-rc.2/angular.min.js"></script>
+    <script type="text/javascript" src="https://code.angularjs.org/1.4.0-rc.2/angular-cookies.js"></script>
+    <script type="text/javascript" src="/sim/cm/codemirror.js"></script>
+    <script type="text/javascript" src="/sim/quest/quest.js"></script>
+    <script type="text/javascript" src="/sim/avr/sim.js"></script>
+  </head>
+  <body ng-app="app">
+    <div class="quest" ng-controller="QuestController">
+      <div class="quest_main" ng-include="'/quest/quest.html'" ng-repeat="quest_name in ['/quest/avrquest.xml']">
+      </div>
+    </div>
+  </body>
+</html>
