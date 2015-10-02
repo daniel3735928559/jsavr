@@ -317,6 +317,7 @@ app.controller("AvrSimController", function($scope){
 		    scope.control.get_program = function(){
 			return scope.program;
 		    }
+		    scope.$emit("jsavr_linked");
 		}
 	    }
 	}
