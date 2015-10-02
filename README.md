@@ -6,7 +6,7 @@ from the AVR ISA as well as a limited amount of assembly language
 ## Demo
 
 A live demo can be found at 
-[http://daniel3735928559.github.io/js-avr/demo.html](http://daniel3735928559.github.io/js-avr/demo.html)
+[http://daniel3735928559.github.io/jsavr/demo.html](http://daniel3735928559.github.io/jsavr/demo.html)
 
 ## Code Example
 
