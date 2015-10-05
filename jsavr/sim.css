@@ -19,6 +19,13 @@
     text-align:center;
 }
 
+#simavr_other{
+    float:left;
+    width:10em;
+    border:1px solid #aaa;
+    text-align:center;
+}
+
 .simavr_title{
     width:100%;
     text-align:center;

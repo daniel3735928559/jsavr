@@ -16,21 +16,6 @@
       <div class="simavr_button" ng-click="reset(true)">clear</div>
       <div class="simavr_status">Status: {{status}}</div>
     </div><br />
-    <span class="simavr_reg">PC: </span>
-    <div ng-class="{simavr_reg:true, simavr_updated:is_updated('PC'), simavr_normal:!is_updated('PC')}">{{PC}}</div>
-    <br />
-    <span class="simavr_reg">SREG: </span>
-    <div ng-class="'simavr_reg '+(is_updated('Z') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">Z: </span>{{Z}}</div>
-    <div ng-class="'simavr_reg '+(is_updated('C') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">C: </span>{{C}}</div>
-    <div ng-class="'simavr_reg '+(is_updated('N') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">N: </span>{{N}}</div>
-    <br />
-    <span class="simavr_reg">IO regs: </span>
-    <div ng-class="'simavr_reg '+(is_updated('PIND') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">PIND: </span>{{PIND}}</div>
-    <div ng-class="'simavr_reg '+(is_updated('DDRD') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">DDRD: </span>{{DDRD}}</div>
-    <div ng-class="'simavr_reg '+(is_updated('PORTD') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">PORTD: </span>{{PORTD}}</div>
-    <div ng-class="'simavr_reg '+(is_updated('SPL') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">SPL: </span>{{SPL}}</div>
-    <div ng-class="'simavr_reg '+(is_updated('SPH') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">SPH: </span>{{SPH}}</div>
-    <br /><br />
     <div id="simavr_pm">
       <div class="simavr_title">Program memory</div><br />
       <div class="simavr_display_button" ng-click="PC_display_mode = 't'">[text]</div>
@@ -54,9 +39,9 @@
       
       <span ng-repeat="r in RF track by $index"><div ng-class="'simavr_reg '+ (is_updated($index) ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">{{$index}}: </span>{{display_rf($index)}}</div><br ng-if="($index)%2 == 1" /></span><br />
       Pointers: <br />
-      <div ng-class="'simavr_reg '+(is_updated(26)||is_updated(27) ? 'updated' : 'normal')">X: {{RF[26]+256*RF[27]}}</div><br />
-      <div ng-class="'simavr_reg '+(is_updated(28)||is_updated(29) ? 'updated' : 'normal')">Y: {{RF[28]+256*RF[29]}}</div><br />
-      <div ng-class="'simavr_reg '+(is_updated(30)||is_updated(31) ? 'updated' : 'normal')">Z: {{RF[30]+256*RF[31]}}</div>
+      <div ng-class="'simavr_reg '+(is_updated(26)||is_updated(27) ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">X: </span>{{RF[26]+256*RF[27]}}</div><br />
+      <div ng-class="'simavr_reg '+(is_updated(28)||is_updated(29) ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">Y: </span>{{RF[28]+256*RF[29]}}</div><br />
+      <div ng-class="'simavr_reg '+(is_updated(30)||is_updated(31) ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">Z: </span>{{RF[30]+256*RF[31]}}</div>
     </div>
     <div id="simavr_ram">
       <div class="simavr_title">RAM</div><br />
@@ -71,6 +56,20 @@
 	<br />
       </div>
       <br />
+    </div>
+    <div id="simavr_other">
+      <div class="simavr_title">Other</div><br />
+      <div ng-class="{simavr_reg:true, simavr_updated:is_updated('PC'), simavr_normal:!is_updated('PC')}"><span class="simavr_label">PC: </span>{{PC}}</div><br />
+      <br />
+      <div ng-class="'simavr_reg '+(is_updated('Z') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">Z: </span>{{Z}}</div><br />
+      <div ng-class="'simavr_reg '+(is_updated('C') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">C: </span>{{C}}</div><br />
+      <div ng-class="'simavr_reg '+(is_updated('N') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">N: </span>{{N}}</div><br />
+      <br />
+      <div ng-class="'simavr_reg '+(is_updated('PIND') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">PIND: </span>{{PIND}}</div><br />
+      <div ng-class="'simavr_reg '+(is_updated('DDRD') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">DDRD: </span>{{DDRD}}</div><br />
+      <div ng-class="'simavr_reg '+(is_updated('PORTD') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">PORTD: </span>{{PORTD}}</div><br />
+      <div ng-class="'simavr_reg '+(is_updated('SPL') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">SPL: </span>{{SPL}}</div><br />
+      <div ng-class="'simavr_reg '+(is_updated('SPH') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">SPH: </span>{{SPH}}</div>
     </div>
   </div>
 </div>

@@ -3,7 +3,8 @@ var app = app || angular.module('app', []);
 app.controller("AvrSimController", function($scope){
     $scope.do_nothing = function(a){}
     $scope.debug_log = $scope.do_nothing;
-    $scope.status = "Ready"
+    $scope.status = "Ready";
+    $scope.running = false;
     $scope.cm_setup = function(){
 	var sim_textarea = document.getElementById("simavr"+$scope.simid+"_program_area");
 	$scope.debug_log($scope.simid,sim_textarea);
@@ -18,9 +19,21 @@ app.controller("AvrSimController", function($scope){
 	else{
 	    $scope.editor.setSize(null, "100%");
 	}
+	$scope.editor.setOption("extraKeys", {
+            'Enter': function(cm) {
+                if($scope.running) $scope.step();
+		else return CodeMirror.Pass
+                $scope.$apply();
+            },
+            'Ctrl-Enter': function(cm) {
+                if(!($scope.running)) $scope.program_pm();
+		else $scope.step();
+                $scope.$apply();
+            }
+	});
 	$scope.editor.setValue($scope.program);
     }
-    $scope.current_inst = "ldi r31,9";
+    $scope.symbols = {};
     $scope.PC_display_mode = "t";
     $scope.RAM_display_mode = "d";
     $scope.RF_display_mode = "d";
@@ -49,7 +62,7 @@ app.controller("AvrSimController", function($scope){
 	for(var i = 0; i < $scope.RF_size; i++) $scope.RF[i] = 0;
 	for(var i = 0; i < $scope.RAM_size; i++) $scope.RAM[i] = 0;
 	for(var i = 0; i < $scope.IORF_size; i++) $scope.IORF[i] = 0;
-	if(pm_reset){ for(var i = 0; i < $scope.PM_size; i++) $scope.PM[i] = $scope.parse("nop"); }
+	if(pm_reset){ for(var i = 0; i < $scope.PM_size; i++) $scope.PM[i] = $scope.parse("nop",i); }
 	if($scope.editor) $scope.editor.removeLineClass($scope.error_line, "background", "active_line");
     }
     $scope.display_ram_start = 0;
@@ -88,17 +101,20 @@ app.controller("AvrSimController", function($scope){
 	}
     }
     $scope.program_pm = function(){
-	$scope.reset();
+	$scope.reset(true);
 	$scope.program = $scope.editor.getValue();
-	var lines = $scope.program.split("\n");
+	var pm_data = $scope.preparse($scope.program);
+	console.log("pm_data",pm_data);
+	console.log("symbols",$scope.symbols);
 	var pm_addr = 0;
-	for(var i = 0; i < lines.length; i++){
-	    var inst = $scope.parse(lines[i]);
-	    if(inst.error){
-		$scope.error_on_line(i, inst.error);
-		break;
-	    }
-	    else if(!(inst.directive)){
+	for(var i = 0; i < pm_data.length; i++){
+	    var datum = pm_data[i];
+	    if(datum.inst){
+		var inst = $scope.parse(datum.inst,pm_addr);
+		if(inst.error){
+		    $scope.error_on_line(datum.line, inst.error);
+		    break;
+		}
 		$scope.PM[pm_addr] = inst;
 		pm_addr++;
 	    }
@@ -109,14 +125,64 @@ app.controller("AvrSimController", function($scope){
 	$scope.error_line = linenum;
 	if($scope.editor) $scope.editor.addLineClass(linenum, "background", "active_line");
     }
-    $scope.parse = function(inst){
-	for(var d in $scope.directives){
-	    var matches = inst.match($scope.directives[d].regex)
-	    if(matches){
-		$scope.directives[d].process(matches);
-		return null;
+    $scope.preparse = function(){
+	var lines = $scope.program.split("\n");
+	var to_program = [];
+	var pm_offset = 0;
+	var ram_offset = 1024;
+	for(var i = 0; i < lines.length; i++){
+	    var is_inst = true;
+	    for(var d in $scope.directives){
+		var matches = lines[i].match($scope.directives[d].regex)
+		if(matches){
+		    // process needs to return:
+		    // - What it inserts to PM (pm_data)
+		    // - What it inserts into RAM (ram_data)
+		    // - What symbol it wants to make (symbol)
+		    // - What kind of symbol it is (symbol_type == "pm" | "ram")
+		    // - Whether there was an error (error)
+		    
+		    var result = $scope.directives[d].process(matches);
+
+		    // Handle error
+		    if(result.error){
+			$scope.error_on_line(i, result.error);
+			return;
+		    }
+
+		    // Update symbol
+		    if(result.symbol && result.symbol_type){
+			if(result.symbol_type = "pm")
+			    $scope.symbols[result.symbol] = pm_offset;
+			else if(result.symbol_type = "ram")
+			    $scope.symbols[result.symbol] = ram_offset;
+		    }
+		    
+		    // Insert data and update offsets
+		    if(result.pm_data){
+			for(var j = 0; j < result.pm_data.length; j++){
+			    to_program.push({'byte':result.pm_data[j],'line':i});
+			}
+			pm_offset += result.pm_data.length;
+		    }
+		    if(result.ram_data){
+			for(var j = 0; j < result.ram_data.length; j++){
+			    $scope.RAM[ram_offset + j] = result.ram_data[j];
+			}
+			ram_offset += result.ram_data.length;
+		    }
+		    is_inst = false;
+		    break;
+		}
+	    }
+	    if(is_inst && !(/^[ \t]*$/.test(lines[i]))){
+		to_program.push({'inst':lines[i],'line':i});
+		pm_offset++;
 	    }
 	}
+	return to_program;
+    }
+    $scope.parse = function(inst,addr){
 	$scope.debug_log(inst)
 	var matches = inst.match(/^ *([^ ]+)* *([^;]*) *(;.*)?$/)
 	var mnemonic = matches[1];
@@ -136,7 +202,7 @@ app.controller("AvrSimController", function($scope){
 	    var opcode = $scope.instructions[mnemonic].c;
 	    $scope.debug_log(format, execf, ops, opcode);
 	    var data = {"r":ops[1],"s":ops[2],"i":ops[3],"c":opcode};
-	    var new_inst = new $scope.instruction(mnemonic + " " + operand, mnemonic, data, execf);
+	    var new_inst = new $scope.instruction(mnemonic + " " + operand, mnemonic, data, execf,addr);
 	    if(new_inst.check_valid()){
 		return new_inst;
 	    }
@@ -155,38 +221,104 @@ app.controller("AvrSimController", function($scope){
 	}
 	return false;
     }
+    $scope.handle_string_escapes = function(s){
+	s = s.replace(/(([^\\]|)(\\\\)*)\\n/g,"$1\n");
+	s = s.replace(/(([^\\]|)(\\\\)*)\\"/g,"$1\"");
+	s = s.replace(/\\\\/g,"\\");
+	return s;
+    }
     $scope.directives = {
 	"label":{"regex":/^ *([a-zA-Z_][a-zA-Z0-9_]*): *$/,"process":function(args){
-	    $scope.symbols[args[0]] = $scope.location;
+	    return {"symbol":args[1],
+		    "symbol_type":"pm",
+		   };
 	}},
-	"byte":{"regex":/^ *\.byte ([0-9,]+) *$/,"process":function(args){
-
+	"word":{"regex":/^ *\.word ([0-9,]+) *$/,"process":function(args){
+	    var rdata = args[1].split(",");
+	    for(var i = 0; i < rdata.length; i++){
+		rdata[i] = $scope.truncate(parseInt(rdata[i]),8);
+	    }
+	    return {"symbol":args[1],
+		    "symbol_type":"pm",
+		    "pm_data":rdata
+		   };
 	}},
 	"byte_ram":{"regex":/^ *\.byte\(([a-zA-Z_][a-zA-Z0-9_]*)\) ([0-9,]+) *$/,"process":function(args){
+	    var rdata = args[2].split(",");
+	    for(var i = 0; i < rdata.length; i++){
+		rdata[i] = $scope.truncate(parseInt(rdata[i]),8);
+	    }
+	    return {"symbol":args[1],
+		    "symbol_type":"ram",
+		    "ram_data":rdata
+		   };
+	}},
+	"string_ram":{"regex":/^ *\.string\(([a-zA-Z_][a-zA-Z0-9_]*)\) "([^"\\]|\\.)*" *$/,"process":function(args){
+	    var str = $scope.handle_string_escapes(args[2]);
+	    var rdata = []
+	    for(var i = 0; i < str.length; i++){
+		rdata.push($scope.truncate(str.charCodeAt(i),8));
+	    }
+	    return {"symbol":args[1],
+		    "symbol_type":"ram",
+		    "ram_data":rdata
+		   };
 	    
-	}},
-	"string":{"regex":/^ *\.string ([0-9,]+) *$/,"process":function(args){
-
-	}},
-	"string_ram":{"regex":/^ *\.string\(([a-zA-Z_][a-zA-Z0-9_]*)\) ([0-9,]+) *$/,"process":function(args){
-
-	}},
-    }
+	}}
+    };
     $scope.formats = {
-	"4r8i":{"string":/ *r([0-9]+), *()([0-9]+) */,"binary":"CCCCIIIIRRRRIIII","validator":function(c, r, s, i){return 16 <= r && r < 32 && 0 <= i && i < 256;}},
-	"5r5s":{"string":/ *r([0-9]+), *r([0-9]+)() */,"binary":"CCCCCCSRRRRRSSSS","validator":function(c, r, s, i){return 0 <= r && r < 32 && 0 <= s && s < 32;}},
-	"6s5r":{"string":/ *r([0-9]+), *([0-9]+)() */,"binary":"CCCCCSSRRRRRSSSS","validator":function(c, r, s, i){return 0 <= r && r < 32 && 0 <= s && s < 64;}},
-	"5r6s":{"string":/ *([0-9]+), *r([0-9]+)() */,"binary":"CCCCCSSRRRRRSSSS","validator":function(c, r, s, i){return 0 <= r && r < 64 && 0 <= s && s < 32;}},
-	"5r":{"string":/ *r([0-9]+)()() */,"binary":"CCCCCCCRRRRRCCCC","validator":function(c, r, s, i){return 0 <= r && r < 32;}},
-	"5rX":{"string":/ *r([0-9]+)(), *(X\+|-X|X) */,"binary":"CCCCCCCRRRRRCCCC","validator":function(c, r, s, i){return 0 <= r && r < 32;}},
-	"X5r":{"string":/ *(X\+|-X|X), *r([0-9]+)() */,"binary":"CCCCCCCRRRRRCCCC","validator":function(c, r, s, i){return 0 <= s && s < 32;}},
-	//"5rmX":{"string":/ *r([0-9]+)()(), *-X */,"binary":"CCCCCCCRRRRRCCCC","validator":function(c, r, s, i){return 0 <= r && r < 32;}},
-	//"mX5r":{"string":/ *-X, *r([0-9]+)()() */,"binary":"CCCCCCCRRRRRCCCC","validator":function(c, r, s, i){return 0 <= r && r < 32;}},
-	//"5rZ":{"string":/ *r([0-9]+)()(), *Z */,"binary":"CCCCCCCRRRRRCCCC","validator":function(c, r, s, i){return 0 <= r && r < 32;}},
-	//"Z5r":{"string":/ *Z, *r([0-9]+)()() */,"binary":"CCCCCCCRRRRRCCCC","validator":function(c, r, s, i){return 0 <= r && r < 32;}},
-	"12i":{"string":/ *()()([0-9]+) */,"binary":"CCCCIIIIIIIIIIII","validator":function(c, r, s, i){return 0 <= i && i < 4096;}},
-	"7i":{"string":/ *()()([0-9]+) */,"binary":"CCCCCCIIIIIIICCC","validator":function(c, r, s, i){return 0 <= i && i < 128;}},
-	"n":{"string":/ *()()() */,"binary":"CCCCCCCCCCCCCCCC","validator":function(c, r, s, i){return true;}}
+	"4r8i":{
+	    "string":/ *r([0-9]+), *()([a-zA-Z_0-9]+) */,
+	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " r" + r + ","+i;},
+	    "binary":"CCCCIIIIRRRRIIII",
+	    "validator":function(c, r, s, i){return 16 <= r && r < 32 && 0 <= i && i < 256;}},
+	"5r5s":{
+	    "string":/ *r([0-9]+), *r([0-9]+)() */,
+	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " r" + r + ",r"+s;},
+	    "binary":"CCCCCCSRRRRRSSSS",
+	    "validator":function(c, r, s, i){return 0 <= r && r < 32 && 0 <= s && s < 32;}},
+	"6s5r":{
+	    "string":/ *r([0-9]+), *([0-9]+)() */,
+	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " r" + r + ","+s;},
+	    "binary":"CCCCCSSRRRRRSSSS",
+	    "validator":function(c, r, s, i){return 0 <= r && r < 32 && 0 <= s && s < 64;}},
+	"5r6s":{
+	    "string":/ *([0-9]+), *r([0-9]+)() */,
+	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " " + r + ",r"+s;},
+	    "binary":"CCCCCSSRRRRRSSSS",
+	    "validator":function(c, r, s, i){return 0 <= r && r < 64 && 0 <= s && s < 32;}},
+	"5r":{
+	    "string":/ *r([0-9]+)()() */,
+	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " r" + r;},
+	    "binary":"CCCCCCCRRRRRCCCC",
+	    "validator":function(c, r, s, i){return 0 <= r && r < 32;}},
+	"5rX":{
+	    "string":/ *r([0-9]+)(), *(X\+|-X|X) */,
+	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " r" + r + ","+i;},
+	    "binary":"CCCCCCCRRRRRCCCC",
+	    "validator":function(c, r, s, i){return 0 <= r && r < 32;}},
+	"X5r":{
+	    "string":/ *(X\+|-X|X), *r([0-9]+)() */,
+	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " " + r + ",r"+s;},
+	    "binary":"CCCCCCCRRRRRCCCC",
+	    "validator":function(c, r, s, i){return 0 <= s && s < 32;}},
+	"12i":{
+	    "string":/ *()()([a-zA-Z_0-9]+) */,
+	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " " + i;},
+	    "binary":"CCCCIIIIIIIIIIII",
+	    "i_bits":12,
+	    "validator":function(c, r, s, i){return 0 <= i && i < 4096;}},
+	"7i":{
+	    "string":/ *()()([a-zA-Z_0-9]+) */,
+	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " " + i;},
+	    "binary":"CCCCCCIIIIIIICCC",
+	    "i_bits":7,
+	    "validator":function(c, r, s, i){return 0 <= i && i < 128;}},
+	"n":{
+	    "string":/ *()()() */,
+	    "to_string":function(mnemonic,c,r,s,i){return mnemonic;},
+	    "binary":"CCCCCCCCCCCCCCCC",
+	    "validator":function(c, r, s, i){return true;}}
     }
     $scope.encode = function(format, c, r, s, i){
 	var fmt = $scope.formats[format].binary;
@@ -235,43 +367,50 @@ app.controller("AvrSimController", function($scope){
 	this.name = name;
 	this.addr = addr;
     }
-    $scope.instruction = function(text, mnemonic, data, exec){
+    $scope.instruction = function(text, mnemonic, data, exec, addr){
 	thislabel = false;
+	this.addr = addr;
 	this.text = text;
 	this.c = data.c;
 	this.r = data.r;
 	this.s = data.s;
 	this.i = data.i;
+	this.exec = exec;
 	this.mnemonic = mnemonic;
 	$scope.debug_log(this.text, this.c, this.r, this.s, this.i, this.mnemonic);
 	this.format = $scope.instructions[this.mnemonic].format;
 	this.encoding = $scope.encode(this.format, this.c, this.r, this.s, this.i);
+	if(this.i in $scope.symbols){
+	    console.log(this.i);
+	    this.i = $scope.symbols[this.i];
+	    var fmt = $scope.formats[this.format];
+	    if(fmt.i_bits){
+		this.i = $scope.truncate(this.i - this.addr,fmt.i_bits);
+		console.log(this.i);
+	    }
+	}
+	var self = this;
 	this.display = function(){
 	    if($scope.PC_display_mode == "t"){
-		return this.text;
+		return $scope.formats[self.format].to_string(self.mnemonic,self.c,self.r,self.s,self.i);
 	    }
 	    else if($scope.PC_display_mode == "d"){
-		return this.encoding;
+		return self.encoding;
 	    }
 	    else if($scope.PC_display_mode == "h"){
-		var s = this.encoding.toString(16);
+		var s = self.encoding.toString(16);
 		return "0x"+smul("0",4 - s.length)+s;
 	    }
 	    else if($scope.PC_display_mode == "b"){
-		var s = this.encoding.toString(2);
+		var s = self.encoding.toString(2);
 		return smul("0",16 - s.length) + s;
 	    }
 	}
 	this.check_valid = function(){
-	    return $scope.formats[this.format].validator(this.c, this.r, this.s, this.i);
+	    return $scope.formats[self.format].validator(self.c, self.r, self.s, self.i);
 	}
 	this.run = function(){
-	    if($scope.formats[this.format].validator(this.c, this.r, this.s, this.i)){
-		exec(this.c, this.r, this.s, this.i);
-	    }
-	    else{
-		$scope.raise_error("Illegal instruction: "+text);
-	    }
+	    self.exec(self.c, self.r, self.s, self.i);
 	}
     }
     function smul(str, num) {
@@ -345,6 +484,8 @@ app.controller("AvrSimController", function($scope){
     }
     $scope.instructions = {
 	"ldi":{"format":"4r8i", "c": 14, "exec":function(c, r, s, i){
+	    console.log(i,$scope.symbols[i])
+	    if(i in $scope.symbols) i = $scope.symbols[i]
 	    $scope.RF[r] = i;
 	    $scope.PC++;
 	    $scope.updated = [r,"PC"];}},
@@ -518,7 +659,7 @@ app.controller("AvrSimController", function($scope){
     };
     $scope.reset(true);
     setTimeout($scope.cm_setup, 0);
-})
+    })
     .directive('simAvr',function(){
 	return {
 	    restrict: 'E',
