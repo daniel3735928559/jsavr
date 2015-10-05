@@ -70,6 +70,12 @@
     width:12em;
 }
 
+.simavr_ram_start{
+    padding:4px;
+    width:4em;
+    margin:4px;
+}
+
 .simavr_ram{
     text-align:left;
     display:inline-block;

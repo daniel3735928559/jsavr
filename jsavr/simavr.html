@@ -3,7 +3,7 @@
     <div class="simavr_controls">
       <div class="simavr_button" ng-click="program_pm()">program</div>
     </div><br />
-    <form><textarea ng-attr-id="simavr{{simid}}_program_area">Hello</textarea></form>
+    <form><textarea ng-attr-id="simavr{{simid}}_program_area"></textarea></form>
     <!-- <div id="editor" class="simavr_program" ng-init="ace_setup()"></div> -->
     <!-- <script src="ed/ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script> -->
     <!-- <textarea class="simavr_program" ng-model="program" ng-model-instant></textarea><br /> -->
@@ -63,9 +63,10 @@
       <div class="simavr_display_button" ng-click="RAM_display_mode = 'b'">[bin]</div>
       <div class="simavr_display_button" ng-click="RAM_display_mode = 'd'">[dec]</div>
       <div class="simavr_display_button" ng-click="RAM_display_mode = 'h'">[hex]</div>
-      <div ng-repeat="i in get_display_ram() track by $index">
-	<div ng-class="'simavr_ram '+ (is_updated('['+display_ram_start+$index+']') ? 'simavr_updated' : 'simavr_normal')">
-	  <span class="simavr_label">{{$index}}: </span>{{display_ram($index);}}
+      Start: <input class="simavr_ram_start" type="number" ng-model="display_ram_start"></input>
+      <div ng-repeat="i in RAM.slice(display_ram_start,display_ram_start+display_ram_length) track by $index">
+	<div ng-class="'simavr_ram '+ (is_updated('['+(display_ram_start+$index)+']') ? 'simavr_updated' : 'simavr_normal')">
+	  <span class="simavr_label">{{display_ram_start+$index}}: </span>{{display_ram(display_ram_start+$index);}}
 	</div>
 	<br />
       </div>

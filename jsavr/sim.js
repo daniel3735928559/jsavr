@@ -24,7 +24,7 @@ app.controller("AvrSimController", function($scope){
     $scope.PC_display_mode = "t";
     $scope.RAM_display_mode = "d";
     $scope.RF_display_mode = "d";
-    $scope.program = "ldi r31,9\nadd r30,r31\nadd r30,r30\nadd r30,r30\ncp r30,r31\ncpi r30,36\nbreq 125\ninc r0\nadd r0,r30\nldi r31,0\nldi r30,11\nst Z,r0\nld r1,Z";
+    //$scope.program = "ldi r31,9\nadd r30,r31\nadd r30,r30\nadd r30,r30\ncp r30,r31\ncpi r30,36\nbreq 125\ninc r0\nadd r0,r30\nldi r31,0\nldi r30,11\nst Z,r0\nld r1,Z";
     $scope.RAM = [];
     $scope.PM = [];
     $scope.RF = [];
@@ -127,11 +127,15 @@ app.controller("AvrSimController", function($scope){
 	    var execf = $scope.instructions[mnemonic].exec;
 	    var ops = operand.match($scope.formats[format].string);
 	    if(!ops){
-		return {"error":"Illegal operands to instruction " + inst};
+		return {"error":"Operands to instruction " + inst + " did not parse"};
+	    }
+	    for(var i = 0; i < 3; i++){
+		if(/^[0-9]+$/.test(ops[i])) ops[i] = parseInt(ops[i]);
+		//else if(format.sym_valid[i]) ops[i] = symbols[ops[i]];
 	    }
 	    var opcode = $scope.instructions[mnemonic].c;
 	    $scope.debug_log(format, execf, ops, opcode);
-	    var data = {"r":parseInt(ops[1]),"s":parseInt(ops[2]),"i":parseInt(ops[3]),"c":opcode};
+	    var data = {"r":ops[1],"s":ops[2],"i":ops[3],"c":opcode};
 	    var new_inst = new $scope.instruction(mnemonic + " " + operand, mnemonic, data, execf);
 	    if(new_inst.check_valid()){
 		return new_inst;
@@ -171,10 +175,11 @@ app.controller("AvrSimController", function($scope){
     $scope.formats = {
 	"4r8i":{"string":/ *r([0-9]+), *()([0-9]+) */,"binary":"CCCCIIIIRRRRIIII","validator":function(c, r, s, i){return 16 <= r && r < 32 && 0 <= i && i < 256;}},
 	"5r5s":{"string":/ *r([0-9]+), *r([0-9]+)() */,"binary":"CCCCCCSRRRRRSSSS","validator":function(c, r, s, i){return 0 <= r && r < 32 && 0 <= s && s < 32;}},
-	"5r6s":{"string":/ *r([0-9]+), *([0-9]+)() */,"binary":"CCCCCSSRRRRRSSSS","validator":function(c, r, s, i){return 0 <= r && r < 32 && 0 <= s && s < 64;}},
+	"6s5r":{"string":/ *r([0-9]+), *([0-9]+)() */,"binary":"CCCCCSSRRRRRSSSS","validator":function(c, r, s, i){return 0 <= r && r < 32 && 0 <= s && s < 64;}},
+	"5r6s":{"string":/ *([0-9]+), *r([0-9]+)() */,"binary":"CCCCCSSRRRRRSSSS","validator":function(c, r, s, i){return 0 <= r && r < 64 && 0 <= s && s < 32;}},
 	"5r":{"string":/ *r([0-9]+)()() */,"binary":"CCCCCCCRRRRRCCCC","validator":function(c, r, s, i){return 0 <= r && r < 32;}},
 	"5rX":{"string":/ *r([0-9]+)(), *(X\+|-X|X) */,"binary":"CCCCCCCRRRRRCCCC","validator":function(c, r, s, i){return 0 <= r && r < 32;}},
-	"X5r":{"string":/ *(X\+|-X|X), *r([0-9]+)() */,"binary":"CCCCCCCRRRRRCCCC","validator":function(c, r, s, i){return 0 <= r && r < 32;}},
+	"X5r":{"string":/ *(X\+|-X|X), *r([0-9]+)() */,"binary":"CCCCCCCRRRRRCCCC","validator":function(c, r, s, i){return 0 <= s && s < 32;}},
 	//"5rmX":{"string":/ *r([0-9]+)()(), *-X */,"binary":"CCCCCCCRRRRRCCCC","validator":function(c, r, s, i){return 0 <= r && r < 32;}},
 	//"mX5r":{"string":/ *-X, *r([0-9]+)()() */,"binary":"CCCCCCCRRRRRCCCC","validator":function(c, r, s, i){return 0 <= r && r < 32;}},
 	//"5rZ":{"string":/ *r([0-9]+)()(), *Z */,"binary":"CCCCCCCRRRRRCCCC","validator":function(c, r, s, i){return 0 <= r && r < 32;}},
@@ -309,11 +314,13 @@ app.controller("AvrSimController", function($scope){
 	else if(s == 62) $scope.SPH = val;
     }
     $scope.incX = function(){
+	console.log($scope.RF[26]);
 	$scope.RF[26]++;
 	if($scope.RF[26] == 256){
 	    $scope.RF[26] = 0;
 	    $scope.RF[27] = $scope.truncate($scope.RF[27]+1,8);
 	}
+	console.log($scope.RF[26]);
     }
     $scope.decX = function(){
 	$scope.RF[26]--;
@@ -435,6 +442,7 @@ app.controller("AvrSimController", function($scope){
 	    i = r;
 	    r = s;
 	    var X = $scope.RF[26]+256*$scope.RF[27];
+	    console.log(r,s,i);
 	    if(i == "-X"){
 		X = $scope.decX();
 	    }
@@ -464,6 +472,9 @@ app.controller("AvrSimController", function($scope){
 	    $scope.PC++;
 	    $scope.updated = [r,"PC"];}},
 	"out":{"format":"5r6s", "c": 23, "exec":function(c, r, s, i){
+	    i = s;
+	    s = r;
+	    r = i;
 	    $scope.write_IO(s,$scope.RF[r]);
 	    $scope.PC++;
 	    $scope.updated = ["PC"];}},
