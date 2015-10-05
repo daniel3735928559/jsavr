@@ -1,8 +1,7 @@
 <div class="simavr">
   <div class="simavr_programming">
     <div class="simavr_controls">
-      <div class="simavr_button" ng-click="program_pm()">[program]</div>
-      <div class="simavr_button" ng-click="submit()">[submit]</div>
+      <div class="simavr_button" ng-click="program_pm()">program</div>
     </div><br />
     <form><textarea ng-attr-id="simavr{{simid}}_program_area">Hello</textarea></form>
     <!-- <div id="editor" class="simavr_program" ng-init="ace_setup()"></div> -->
@@ -12,13 +11,25 @@
   </div>
   <div class="simavr_simulator">
     <div class="simavr_controls">
-      <div class="simavr_button" ng-click="submit()">[circuit]</div>
-      <div class="simavr_button" ng-click="step()">[step]</div>
-      <div class="simavr_button" ng-click="reset(false)">[reset]</div>
-      <div class="simavr_button" ng-click="reset(true)">[clear]</div>
+      <div class="simavr_button" ng-click="step()">step</div>
+      <div class="simavr_button" ng-click="reset(false)">reset</div>
+      <div class="simavr_button" ng-click="reset(true)">clear</div>
+      <div class="simavr_status">Status: {{status}}</div>
     </div><br />
-    <div ng-class="{simavr_reg:true, simavr_updated:is_updated('PC'), simavr_normal:!is_updated('PC')}"><span class="simavr_label">PC: </span>{{PC}}</div>
-    <div ng-class="'simavr_reg '+(is_updated('Z') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">Z: </span>{{Z}}</div><div ng-class="'simavr_reg '+(is_updated('C') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">C: </span>{{C}}</div><div ng-class="'simavr_reg '+(is_updated('O') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">O: </span>{{O}}</div>
+    <span class="simavr_reg">PC: </span>
+    <div ng-class="{simavr_reg:true, simavr_updated:is_updated('PC'), simavr_normal:!is_updated('PC')}">{{PC}}</div>
+    <br />
+    <span class="simavr_reg">SREG: </span>
+    <div ng-class="'simavr_reg '+(is_updated('Z') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">Z: </span>{{Z}}</div>
+    <div ng-class="'simavr_reg '+(is_updated('C') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">C: </span>{{C}}</div>
+    <div ng-class="'simavr_reg '+(is_updated('N') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">N: </span>{{N}}</div>
+    <br />
+    <span class="simavr_reg">IO regs: </span>
+    <div ng-class="'simavr_reg '+(is_updated('PIND') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">PIND: </span>{{PIND}}</div>
+    <div ng-class="'simavr_reg '+(is_updated('DDRD') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">DDRD: </span>{{DDRD}}</div>
+    <div ng-class="'simavr_reg '+(is_updated('PORTD') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">PORTD: </span>{{PORTD}}</div>
+    <div ng-class="'simavr_reg '+(is_updated('SPL') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">SPL: </span>{{SPL}}</div>
+    <div ng-class="'simavr_reg '+(is_updated('SPH') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">SPH: </span>{{SPH}}</div>
     <br /><br />
     <div id="simavr_pm">
       <div class="simavr_title">Program memory</div><br />
@@ -52,8 +63,8 @@
       <div class="simavr_display_button" ng-click="RAM_display_mode = 'b'">[bin]</div>
       <div class="simavr_display_button" ng-click="RAM_display_mode = 'd'">[dec]</div>
       <div class="simavr_display_button" ng-click="RAM_display_mode = 'h'">[hex]</div>
-      <div ng-repeat="i in RAM track by $index">
-	<div ng-class="'simavr_ram '+ (is_updated('['+$index+']') ? 'simavr_updated' : 'simavr_normal')">
+      <div ng-repeat="i in get_display_ram() track by $index">
+	<div ng-class="'simavr_ram '+ (is_updated('['+display_ram_start+$index+']') ? 'simavr_updated' : 'simavr_normal')">
 	  <span class="simavr_label">{{$index}}: </span>{{display_ram($index);}}
 	</div>
 	<br />

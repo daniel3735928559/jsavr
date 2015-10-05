@@ -28,11 +28,31 @@
     padding-bottom:5px;
 }
 
+.simavr_status{
+    display:inline-block;
+    padding:5px;
+    border-left:1px solid #aaa;
+    /* border-radius:5px; */
+    margin:5px;
+    width:45%;
+    font-size:9pt;
+    float:right;    
+}
+
+.active_line{
+    background-color:#f66;
+}
 .simavr_label{
     font-size:10pt;
     color:#333;
     display:inline-block;
     width:2em;
+}
+.simavr_label_long{
+    font-size:10pt;
+    color:#333;
+    display:inline-block;
+    margin-right:0.5ex;
 }
 
 .simavr_reg{
@@ -70,21 +90,14 @@
 .simavr_programming{
     display:inline-block;
     float:left;
-    width:35%;
-    height:100%;
-}
-
-.simavr_circuit{
-    display:inline-block;
-    float:left;
-    width:35%;
+    width:25%;
     height:100%;
 }
 
 .simavr_simulator{
     display:inline-block;
     float:left;
-    width:55%;
+    width:75%;
     height:100%;
 }
 
