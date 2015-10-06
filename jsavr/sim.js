@@ -13,21 +13,21 @@ app.controller("AvrSimController", function($scope){
 	    lineNumbers: true,
 	    gutters: ["breakpoints", "CodeMirror-linenumbers"]
 	});
-	if($scope.program != ""){
-	    $scope.editor.setSize(null, ($scope.program.split("\n").length + 2)*($scope.editor.defaultTextHeight()) + 10);
+	if($scope.size){
+	    if($scope.size == "auto"){
+		console.log("hello");
+		$scope.editor.setSize(null, ($scope.program.split("\n").length + 2)*($scope.editor.defaultTextHeight()) + 10);
+	    }
+	    else{
+		$scope.editor.setSize(null, $scope.size);
+	    }
 	}
 	else{
-	    $scope.editor.setSize(null, "100%");
+	    $scope.editor.setSize(null, "70%");
 	}
 	$scope.editor.setOption("extraKeys", {
-            'Enter': function(cm) {
-                if($scope.running) $scope.step();
-		else return CodeMirror.Pass
-                $scope.$apply();
-            },
             'Ctrl-Enter': function(cm) {
-                if(!($scope.running)) $scope.program_pm();
-		else $scope.step();
+                $scope.program_pm();
                 $scope.$apply();
             }
 	});
@@ -53,6 +53,17 @@ app.controller("AvrSimController", function($scope){
     $scope.RF_size = 32;
     $scope.updated = [];
     $scope.error_line = 0;
+    $scope.reset_program = function(){
+	if($scope.text){
+	    $scope.debug_log("Using text");
+	    $scope.program = $scope.text;
+	}
+	else if($scope.original_program){
+	    $scope.program = $scope.original_program;
+	}
+	$scope.change_program($scope.program);
+    }
+    
     $scope.reset = function(pm_reset){
 	$scope.PC = 0;
 	$scope.Z = 0;
@@ -658,6 +669,7 @@ app.controller("AvrSimController", function($scope){
 	    $scope.reset(false);}}
     };
     $scope.reset(true);
+    $scope.original_program = $scope.program;
     setTimeout($scope.cm_setup, 0);
     })
     .directive('simAvr',function(){

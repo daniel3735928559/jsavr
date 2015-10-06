@@ -2,6 +2,7 @@
   <div class="simavr_programming">
     <div class="simavr_controls">
       <div class="simavr_button" ng-click="program_pm()">program</div>
+      <div class="simavr_button" ng-click="reset_program()" ng-if="reset_feature != 'no'">reset</div>
     </div><br />
     <form><textarea ng-attr-id="simavr{{simid}}_program_area"></textarea></form>
     <!-- <div id="editor" class="simavr_program" ng-init="ace_setup()"></div> -->
