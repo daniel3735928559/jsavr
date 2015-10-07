@@ -267,12 +267,14 @@ app.controller("AvrSimController", function($scope){
 		    "ram_data":rdata
 		   };
 	}},
-	"string_ram":{"regex":/^ *\.string\(([a-zA-Z_][a-zA-Z0-9_]*)\) "([^"\\]|\\.)*" *$/,"process":function(args){
+	"string_ram":{"regex":/^ *\.string\(([a-zA-Z_][a-zA-Z0-9_]*)\) "((?:[^"\\]|\\.)*)" *$/,"process":function(args){
 	    var str = $scope.handle_string_escapes(args[2]);
+	    console.log(str);
 	    var rdata = []
 	    for(var i = 0; i < str.length; i++){
 		rdata.push($scope.truncate(str.charCodeAt(i),8));
 	    }
+	    console.log(rdata);
 	    return {"symbol":args[1],
 		    "symbol_type":"ram",
 		    "ram_data":rdata
