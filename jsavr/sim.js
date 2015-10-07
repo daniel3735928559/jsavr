@@ -214,6 +214,9 @@ app.controller("AvrSimController", function($scope){
 	    $scope.debug_log(format, execf, ops, opcode);
 	    var data = {"r":ops[1],"s":ops[2],"i":ops[3],"c":opcode};
 	    var new_inst = new $scope.instruction(mnemonic + " " + operand, mnemonic, data, execf,addr);
+	    if(new_inst.error){
+		return {"error":inst.error};
+	    }
 	    if(new_inst.check_valid()){
 		return new_inst;
 	    }
@@ -222,7 +225,7 @@ app.controller("AvrSimController", function($scope){
 	    }
 	}
 	else{
-	    $scope.raise_error("Bad instruction: "+inst);
+	    return {"error":"Invalid instruction " + inst};
 	}
 	return null;
     }
@@ -279,7 +282,7 @@ app.controller("AvrSimController", function($scope){
     };
     $scope.formats = {
 	"4r8i":{
-	    "string":/ *r([0-9]+), *()([a-zA-Z_0-9]+) */,
+	    "string":/ *r([0-9]+), *()([a-zA-Z_0-9)(]+) */,
 	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " r" + r + ","+i;},
 	    "binary":"CCCCIIIIRRRRIIII",
 	    "validator":function(c, r, s, i){return 16 <= r && r < 32 && 0 <= i && i < 256;}},
@@ -314,13 +317,13 @@ app.controller("AvrSimController", function($scope){
 	    "binary":"CCCCCCCRRRRRCCCC",
 	    "validator":function(c, r, s, i){return 0 <= s && s < 32;}},
 	"12i":{
-	    "string":/ *()()([a-zA-Z_0-9]+) */,
+	    "string":/ *()()([a-zA-Z_0-9)(]+) */,
 	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " " + i;},
 	    "binary":"CCCCIIIIIIIIIIII",
 	    "i_bits":12,
 	    "validator":function(c, r, s, i){return 0 <= i && i < 4096;}},
 	"7i":{
-	    "string":/ *()()([a-zA-Z_0-9]+) */,
+	    "string":/ *()()([a-zA-Z_0-9)(]+) */,
 	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " " + i;},
 	    "binary":"CCCCCCIIIIIIICCC",
 	    "i_bits":7,
@@ -391,7 +394,17 @@ app.controller("AvrSimController", function($scope){
 	$scope.debug_log(this.text, this.c, this.r, this.s, this.i, this.mnemonic);
 	this.format = $scope.instructions[this.mnemonic].format;
 	this.encoding = $scope.encode(this.format, this.c, this.r, this.s, this.i);
-	if(this.i in $scope.symbols){
+	matches = this.i.match(/(lo|hi)8\(([a-zA-Z_][a-zA-Z0-9_]*)\)/);
+	if(matches){
+	    if(matches[2] in $scope.symbols){
+		if(matches[1] == "lo") this.i = $scope.truncate($scope.symbols[matches[2]],8);
+		if(matches[1] == "hi") this.i = $scope.truncate($scope.symbols[matches[2]]>>8,8);
+	    }
+	    else{
+		this.error = "Symbol not found " + matches[2];
+	    }
+	}
+	else if(this.i in $scope.symbols){
 	    console.log(this.i);
 	    this.i = $scope.symbols[this.i];
 	    var fmt = $scope.formats[this.format];
@@ -495,8 +508,6 @@ app.controller("AvrSimController", function($scope){
     }
     $scope.instructions = {
 	"ldi":{"format":"4r8i", "c": 14, "exec":function(c, r, s, i){
-	    console.log(i,$scope.symbols[i])
-	    if(i in $scope.symbols) i = $scope.symbols[i]
 	    $scope.RF[r] = i;
 	    $scope.PC++;
 	    $scope.updated = [r,"PC"];}},
@@ -605,7 +616,7 @@ app.controller("AvrSimController", function($scope){
 		X = $scope.incX();
 	    }}},
 	"rjmp":{"format":"12i", "c": 12, "exec":function(c, r, s, i){
-	    $scope.PC = $scope.truncate($scope.PC + i,16);
+	    $scope.PC = $scope.truncate($scope.PC + (i <= 2048 ? i : i-4096),16);
 	    $scope.updated = ["PC"];}},
 	"breq":{"format":"7i", "c": 481, "exec":function(c, r, s, i){
 	    $scope.PC = $scope.truncate($scope.PC + ($scope.Z == 1 ? (i <= 64 ? i : i-128) : 1),16);
