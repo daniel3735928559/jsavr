@@ -48,11 +48,12 @@ app.controller("AvrSimController", function($scope){
     $scope.SPH = 0;
     $scope.SPL = 0;
     
-    $scope.RAM_size = 4096;
-    $scope.PM_size = 32;
+    $scope.RAM_size = 65536;
+    $scope.PM_size = 65536;
     $scope.RF_size = 32;
     $scope.updated = [];
     $scope.error_line = 0;
+    $scope.current_ram_data = [];
     $scope.reset_program = function(){
 	if($scope.text){
 	    $scope.debug_log("Using text");
@@ -74,13 +75,14 @@ app.controller("AvrSimController", function($scope){
 	for(var i = 0; i < $scope.RAM_size; i++) $scope.RAM[i] = 0;
 	for(var i = 0; i < $scope.IORF_size; i++) $scope.IORF[i] = 0;
 	if(pm_reset){ for(var i = 0; i < $scope.PM_size; i++) $scope.PM[i] = $scope.parse("nop",i); }
+	if(!pm_reset){ for(var i = 0; i < $scope.current_ram_data.length; i++) $scope.RAM[i+1024] = $scope.current_ram_data[i]; }
 	if($scope.editor) $scope.editor.removeLineClass($scope.error_line, "background", "active_line");
     }
+    $scope.display_pm_start = 0;
+    $scope.display_pm_length = 16;
     $scope.display_ram_start = 0;
-    $scope.display_ram_length = 32;
-    $scope.get_display_ram = function(){
-	return $scope.RAM.slice($scope.display_ram_start, $scope.display_ram_start + $scope.display_ram_length);
-    }
+    $scope.display_ram_length = 16;
+    
     $scope.change_program = function(prog){
 	$scope.program = prog;
 	if($scope.editor) $scope.editor.setValue(prog);
@@ -182,6 +184,7 @@ app.controller("AvrSimController", function($scope){
 			for(var j = 0; j < result.ram_data.length; j++){
 			    $scope.RAM[ram_offset + j] = result.ram_data[j];
 			}
+			$scope.current_ram_data = $scope.current_ram_data.concat(result.ram_data);
 			ram_offset += result.ram_data.length;
 		    }
 		    is_inst = false;

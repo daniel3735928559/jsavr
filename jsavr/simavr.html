@@ -18,14 +18,14 @@
       <div class="simavr_status">Status: {{status}}</div>
     </div><br />
     <div id="simavr_pm">
-      <div class="simavr_title">Program memory</div><br />
+      <div class="simavr_title">PM at <input class="simavr_mem_start" type="number" ng-model="display_pm_start"></input></div><br />
       <div class="simavr_display_button" ng-click="PC_display_mode = 't'">[text]</div>
       <div class="simavr_display_button" ng-click="PC_display_mode = 'b'">[bin]</div>
       <div class="simavr_display_button" ng-click="PC_display_mode = 'd'">[dec]</div>
       <div class="simavr_display_button" ng-click="PC_display_mode = 'h'">[hex]</div>
-      <div ng-repeat="i in PM track by $index">
-	<div ng-class="'simavr_pm '+ ($index == PC ? 'simavr_active' : 'simavr_normal')">
-	  <span class="simavr_label">{{$index}}: </span>{{PM[$index].display();}}
+      <div ng-repeat="i in PM.slice(display_pm_start,display_pm_start+display_pm_length) track by $index">
+	<div ng-class="'simavr_pm '+ (display_pm_start+$index == PC ? 'simavr_active' : 'simavr_normal')">
+	  <span class="simavr_label_long">{{display_pm_start+$index}}: </span>{{PM[display_pm_start+$index].display();}}
 	</div>
 	<br />
       </div>
@@ -39,33 +39,34 @@
       <br />
       
       <span ng-repeat="r in RF track by $index"><div ng-class="'simavr_reg '+ (is_updated($index) ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">{{$index}}: </span>{{display_rf($index)}}</div><br ng-if="($index)%2 == 1" /></span><br />
-      Pointers: <br />
-      <div ng-class="'simavr_reg '+(is_updated(26)||is_updated(27) ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">X: </span>{{RF[26]+256*RF[27]}}</div><br />
-      <div ng-class="'simavr_reg '+(is_updated(28)||is_updated(29) ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">Y: </span>{{RF[28]+256*RF[29]}}</div><br />
-      <div ng-class="'simavr_reg '+(is_updated(30)||is_updated(31) ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">Z: </span>{{RF[30]+256*RF[31]}}</div>
     </div>
     <div id="simavr_ram">
-      <div class="simavr_title">RAM</div><br />
+      <div class="simavr_title">RAM at <input class="simavr_mem_start" type="number" ng-model="display_ram_start"></input></div><br />
       <div class="simavr_display_button" ng-click="RAM_display_mode = 'b'">[bin]</div>
       <div class="simavr_display_button" ng-click="RAM_display_mode = 'd'">[dec]</div>
       <div class="simavr_display_button" ng-click="RAM_display_mode = 'h'">[hex]</div>
-      Start: <input class="simavr_ram_start" type="number" ng-model="display_ram_start"></input>
       <div ng-repeat="i in RAM.slice(display_ram_start,display_ram_start+display_ram_length) track by $index">
 	<div ng-class="'simavr_ram '+ (is_updated('['+(display_ram_start+$index)+']') ? 'simavr_updated' : 'simavr_normal')">
-	  <span class="simavr_label">{{display_ram_start+$index}}: </span>{{display_ram(display_ram_start+$index);}}
+	  <span class="simavr_label_long">{{display_ram_start+$index}}: </span>{{display_ram(display_ram_start+$index);}}
 	</div>
 	<br />
       </div>
       <br />
     </div>
     <div id="simavr_other">
-      <div class="simavr_title">Other</div><br />
+      <div class="simavr_title">Other</div><br /><div class="simavr_display_button" ng-click="">&nbsp;</div><br />
       <div ng-class="{simavr_reg:true, simavr_updated:is_updated('PC'), simavr_normal:!is_updated('PC')}"><span class="simavr_label">PC: </span>{{PC}}</div><br />
       <br />
       <div ng-class="'simavr_reg '+(is_updated('Z') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">Z: </span>{{Z}}</div><br />
       <div ng-class="'simavr_reg '+(is_updated('C') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">C: </span>{{C}}</div><br />
       <div ng-class="'simavr_reg '+(is_updated('N') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">N: </span>{{N}}</div><br />
       <br />
+      
+      <div ng-class="'simavr_reg '+(is_updated(26)||is_updated(27) ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">X: </span>{{RF[26]+256*RF[27]}}</div><br />
+      <div ng-class="'simavr_reg '+(is_updated(28)||is_updated(29) ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">Y: </span>{{RF[28]+256*RF[29]}}</div><br />
+      <div ng-class="'simavr_reg '+(is_updated(30)||is_updated(31) ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">Z: </span>{{RF[30]+256*RF[31]}}</div><br />
+      <br />
+      
       <div ng-class="'simavr_reg '+(is_updated('PIND') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">PIND: </span>{{PIND}}</div><br />
       <div ng-class="'simavr_reg '+(is_updated('DDRD') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">DDRD: </span>{{DDRD}}</div><br />
       <div ng-class="'simavr_reg '+(is_updated('PORTD') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">PORTD: </span>{{PORTD}}</div><br />

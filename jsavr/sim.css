@@ -33,6 +33,7 @@
     font-size:12pt;
     margin:auto;
     padding-bottom:5px;
+    line-height:2.5em;
 }
 
 .simavr_status{
@@ -60,6 +61,7 @@
     color:#333;
     display:inline-block;
     margin-right:0.5ex;
+    min-width:2em;
 }
 
 .simavr_reg{
@@ -77,7 +79,7 @@
     width:12em;
 }
 
-.simavr_ram_start{
+.simavr_mem_start{
     padding:4px;
     width:4em;
     margin:4px;
