@@ -163,10 +163,12 @@ app.controller("AvrSimController", function($scope){
 
 		    // Update symbol
 		    if(result.symbol && result.symbol_type){
-			if(result.symbol_type = "pm")
+			if(result.symbol_type == "pm"){
 			    $scope.symbols[result.symbol] = pm_offset;
-			else if(result.symbol_type = "ram")
+			}
+			else if(result.symbol_type == "ram"){
 			    $scope.symbols[result.symbol] = ram_offset;
+			}
 		    }
 		    
 		    // Insert data and update offsets
