@@ -62,9 +62,9 @@
       <div ng-class="'simavr_reg '+(is_updated('N') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">N: </span>{{N}}</div><br />
       <br />
       
-      <div ng-class="'simavr_reg '+(is_updated(26)||is_updated(27) ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">X: </span>{{RF[26]+256*RF[27]}}</div><br />
-      <div ng-class="'simavr_reg '+(is_updated(28)||is_updated(29) ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">Y: </span>{{RF[28]+256*RF[29]}}</div><br />
-      <div ng-class="'simavr_reg '+(is_updated(30)||is_updated(31) ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">Z: </span>{{RF[30]+256*RF[31]}}</div><br />
+      <div ng-class="'simavr_reg '+(is_updated(26)||is_updated(27) ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">X: </span>{{truncate(RF[26],8,false)+256*truncate(RF[27],8,false)}}</div><br />
+      <div ng-class="'simavr_reg '+(is_updated(28)||is_updated(29) ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">Y: </span>{{truncate(RF[28],8,false)+256*truncate(RF[29],8,false)}}</div><br />
+      <div ng-class="'simavr_reg '+(is_updated(30)||is_updated(31) ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">Z: </span>{{truncate(RF[30],8,false)+256*truncate(RF[31],8,false)}}</div><br />
       <br />
       
       <div ng-class="'simavr_reg '+(is_updated('PIND') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">PIND: </span>{{PIND}}</div><br />
