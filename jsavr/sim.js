@@ -378,7 +378,6 @@ app.controller("AvrSimController", function($scope){
 		if(fmt.binary[15-j] == "S") data.s = (data.s * 2) + ((x >> j) % 2);
 		if(fmt.binary[15-j] == "I") data.i = (data.i * 2) + ((x >> j) % 2);
 	    }
-	    $scope.debug_log("DATA",data,"FOR",x,"FORMAT",f);
 	    for(var mnemonic in $scope.instructions){
 		inst = $scope.instructions[mnemonic];
 		if(inst.format == f && inst.c == data.c){
@@ -739,7 +738,30 @@ app.controller("AvrSimController", function($scope){
 		    scope.control.get_program = function(){
 			return scope.program;
 		    }
-		    scope.$emit("jsavr_linked");
+		    scope.control.get_PM = function(addr){
+			return scope.PM[addr].encoding;
+		    }
+		    scope.control.get_RF = function(){
+			return scope.RF;
+		    }
+		    scope.control.get_RAM = function(addr){
+			return scope.RAM[addr];
+		    }
+		    scope.control.get_other = function(){
+			return {
+			    "PC":scope.PC,
+			    "Z":scope.Z,
+			    "C":scope.C,
+			    "N":scope.N,
+			    "DDRD":scope.DDRD,
+			    "PIND":scope.PIND,
+			    "PORTD":scope.PORTD,
+			    "SPL":scope.SPL,
+			    "SPH":scope.SPH
+			}
+		    }
+		    if(scope.control.linked) scope.control.linked();
+		    else scope.$emit("jsavr_linked");
 		}
 	    }
 	}

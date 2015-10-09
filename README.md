@@ -34,7 +34,20 @@ Specifically:
 
 * `get_program()`: Returns the current program.
 
-* `set_program(prog)`: Sets the current program to `prog`.  
+* `set_program(prog)`: Sets the current program to `prog`.
+
+* `get_PM(addr)`: Returns the encoded value in program memory at the specified address.
+
+* `get_RF()`: Returns the entire contents of the register file as an array.
+
+* `get_RAM(addr)`: Returns the contents of RAM at the specified address.
+
+* `get_other()`: Returns a dictionary with keys: `PC`,`Z`,`C`,`N`,`SPH`,`SPL`,`DDRD`,`PORTD`,PIND` (and their corresponding values).
+
+Additionally, control.linked() is called when these functions are
+populated by the directive's `link()` function.  Currently, a
+`"jsavr_linked"` Angular event is also emitted at this point, but this
+may not remain true in the future.
 
 ## License
 
