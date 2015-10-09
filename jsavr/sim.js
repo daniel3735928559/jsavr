@@ -127,6 +127,15 @@ app.controller("AvrSimController", function($scope){
 		$scope.PM[pm_addr] = inst;
 		pm_addr++;
 	    }
+	    else if(datum.word){
+		var inst = $scope.decode(datum.word,pm_addr);
+		if(inst.error){
+		    $scope.error_on_line(datum.line, inst.error);
+		    break;
+		}
+		$scope.PM[pm_addr] = inst;
+		pm_addr++;
+	    }
 	}
     }
     $scope.error_on_line = function(linenum, err_msg){
@@ -172,7 +181,7 @@ app.controller("AvrSimController", function($scope){
 		    // Insert data and update offsets
 		    if(result.pm_data){
 			for(var j = 0; j < result.pm_data.length; j++){
-			    to_program.push({'byte':result.pm_data[j],'line':i});
+			    to_program.push({'word':result.pm_data[j],'line':i});
 			}
 			pm_offset += result.pm_data.length;
 		    }
@@ -251,7 +260,7 @@ app.controller("AvrSimController", function($scope){
 	"word":{"regex":/^ *\.word ([0-9,]+) *$/,"process":function(args){
 	    var rdata = args[1].split(",");
 	    for(var i = 0; i < rdata.length; i++){
-		rdata[i] = $scope.truncate(parseInt(rdata[i]),8,false);
+		rdata[i] = $scope.truncate(parseInt(rdata[i]),16,false);
 	    }
 	    return {"symbol":args[1],
 		    "symbol_type":"pm",
@@ -358,24 +367,26 @@ app.controller("AvrSimController", function($scope){
 	}
 	return inst;
     }
-    $scope.decode = function(fmt, x){
-	var inst = {"c":0,"r":0,"s":0,"i":0};
-	for(var i = 15; i >= 0; i--) {
-	    var b = (x>>i)&1;
-	    if(fmt[i] == "C"){
-		inst.c = 2*(inst.c) + b;
+    $scope.decode = function(x,addr){
+	for(var f in $scope.formats){
+	    fmt = $scope.formats[f];
+	    var data = {"c":0,"r":0,"s":0,"i":0}
+	    for(var j = 15; j >= 0; j--){
+		//$scope.debug_log("J",j,fmt.binary[15-j],(x>>j)%2);
+		if(fmt.binary[15-j] == "C") data.c = (data.c * 2) + ((x >> j) % 2);
+		if(fmt.binary[15-j] == "R") data.r = (data.r * 2) + ((x >> j) % 2);
+		if(fmt.binary[15-j] == "S") data.s = (data.s * 2) + ((x >> j) % 2);
+		if(fmt.binary[15-j] == "I") data.i = (data.i * 2) + ((x >> j) % 2);
 	    }
-	    if(fmt[i] == "R"){
-		inst.r = 2*(inst.r) + b;
-	    }
-	    if(fmt[i] == "S"){
-		inst.s = 2*(inst.s) + b;
-	    }
-	    if(fmt[i] == "I"){
-		inst.i = 2*(inst.i) + b;
+	    $scope.debug_log("DATA",data,"FOR",x,"FORMAT",f);
+	    for(var mnemonic in $scope.instructions){
+		inst = $scope.instructions[mnemonic];
+		if(inst.format == f && inst.c == data.c){
+		    return new $scope.instruction(x,mnemonic,data,inst.exec,addr);
+		}
 	    }
 	}
-	return inst;
+	return {"error":"Could not decode instruction: " + x};
     }
     $scope.label = function(name, addr){
 	this.label = true;
@@ -394,24 +405,26 @@ app.controller("AvrSimController", function($scope){
 	this.mnemonic = mnemonic;
 	$scope.debug_log(this.text, this.c, this.r, this.s, this.i, this.mnemonic);
 	this.format = $scope.instructions[this.mnemonic].format;
-	matches = this.i.match(/(lo|hi)8\(([a-zA-Z_][a-zA-Z0-9_]*)\)/);
-	if(matches){
-	    if(matches[2] in $scope.symbols){
-		if(matches[1] == "lo") this.i = $scope.truncate($scope.symbols[matches[2]],8,false);
-		if(matches[1] == "hi") this.i = $scope.truncate($scope.symbols[matches[2]]>>8,8,false);
+	if(this.i.match){
+	    matches = this.i.match(/(lo|hi)8\(([a-zA-Z_][a-zA-Z0-9_]*)\)/);
+	    if(matches){
+		if(matches[2] in $scope.symbols){
+		    if(matches[1] == "lo") this.i = $scope.truncate($scope.symbols[matches[2]],8,false);
+		    if(matches[1] == "hi") this.i = $scope.truncate($scope.symbols[matches[2]]>>8,8,false);
+		}
+		else{
+		    this.error = "Symbol not found " + matches[2];
+		}
 	    }
-	    else{
-		this.error = "Symbol not found " + matches[2];
+	    else if(this.i in $scope.symbols){
+		this.i = $scope.symbols[this.i];
+		var fmt = $scope.formats[this.format];
+		if(fmt.i_bits){
+		    this.i = $scope.truncate(this.i - this.addr - 1,fmt.i_bits,true);
+		}
 	    }
+	    else this.i = parseInt(this.i);
 	}
-	else if(this.i in $scope.symbols){
-	    this.i = $scope.symbols[this.i];
-	    var fmt = $scope.formats[this.format];
-	    if(fmt.i_bits){
-		this.i = $scope.truncate(this.i - this.addr - 1,fmt.i_bits,true);
-	    }
-	}
-	else this.i = parseInt(this.i);
 	this.encoding = $scope.encode(this.format, this.c, this.r, this.s, this.i < 0 ? $scope.truncate(this.i,$scope.formats[this.format].i_bits,false) : this.i);
 	$scope.debug_log(this.text, this.c, this.r, this.s, this.i, this.mnemonic);
 	var self = this;
