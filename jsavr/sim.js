@@ -6,6 +6,7 @@ app.controller("AvrSimController", function($scope){
     $scope.status = "Ready";
     $scope.running = false;
     $scope.cm_setup = function(){
+	$scope.reset_program();
 	var sim_textarea = document.getElementById("simavr"+$scope.simid+"_program_area");
 	$scope.debug_log($scope.simid,sim_textarea);
 	if(sim_textarea == null) return;
@@ -392,6 +393,39 @@ app.controller("AvrSimController", function($scope){
 	this.name = name;
 	this.addr = addr;
     }
+    $scope.output_mux = function(){
+	this.SEL_ADDR = 0;
+	this.SEL_LEN = 255;
+	this.LCD_OUT = 1;
+	this.LB_OUT = 2;
+	this.target = 0;
+	this.len = 0;
+	this.state = 0;
+	this.input = function(val){
+	    if(this.state == this.SEL_ADDR) {
+		this.target = val;
+		this.state = this.SEL_LEN;
+	    }
+	    else if(this.state == this.SEL_LEN){
+		this.len = val;
+		this.state = this.target;
+		this.target = 0;
+	    }
+	    else if(this.len > 0){
+		if(this.state-1 < $scope.output_devs.length)
+		    $scope.output_devs.input(val);
+		this.len--;
+	    }
+	    else{
+		this.state = this.SEL_ADDR;
+	    }
+	}
+    }
+    $scope.lcd = function(){
+	this.input = function(val){
+	    
+	}
+    }
     $scope.instruction = function(text, mnemonic, data, exec, addr){
 	thislabel = false;
 	this.addr = addr;
@@ -485,7 +519,10 @@ app.controller("AvrSimController", function($scope){
 	return 0;
     }
     $scope.write_IO = function(s,val){
-	if(s == 18) $scope.PORTD = $scope.DDRD & val;
+	if(s == 18){
+	    $scope.PORTD = $scope.DDRD & val;
+	    $scope.output();
+	}
 	else if(s == 17) $scope.DDRD = val;
 	else if(s == 61) $scope.SPL = val;
 	else if(s == 62) $scope.SPH = val;
@@ -708,6 +745,10 @@ app.controller("AvrSimController", function($scope){
 	"halt":{"format":"n", "c": 1, "exec":function(c, r, s, i){
 	    $scope.reset(false);}}
     };
+    $scope.output = function(){
+	var out_val = $scope.PORTD;
+	if(
+    }
     $scope.reset(true);
     $scope.original_program = $scope.program;
     setTimeout($scope.cm_setup, 0);

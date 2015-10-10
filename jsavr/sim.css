@@ -1,3 +1,8 @@
+.simavr{
+    display:inline-block;
+    width:73em;
+    height:40em;
+}
 #simavr_rf{
     float:left;
     width:16em;
