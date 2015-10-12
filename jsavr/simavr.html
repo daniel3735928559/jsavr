@@ -72,6 +72,10 @@
       <div ng-class="'simavr_reg '+(is_updated('PORTD') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">PORTD: </span>{{PORTD}}</div><br />
       <div ng-class="'simavr_reg '+(is_updated('SPL') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">SPL: </span>{{SPL}}</div><br />
       <div ng-class="'simavr_reg '+(is_updated('SPH') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">SPH: </span>{{SPH}}</div>
+
+      Outputs:<br />
+      <div class="simavr_reg" ng-repeat="o in outputs track by $index">{{o}}</div>
+      <!-- <pre style="text-align:left;width:100%;"><span ng-repeat="o in outputs track by $index">{{o}}</span></pre> -->
     </div>
   </div>
 </div>
