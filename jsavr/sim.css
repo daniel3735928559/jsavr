@@ -121,6 +121,14 @@
     height:100%;
 }
 
+.simavr_output{
+    display:inline-block;
+    padding:5px;
+    width:90%;
+    height:100%;
+    border:1px solid #aaa;
+}
+
 .simavr_program{
     height:85%;
     width:90%;
@@ -143,6 +151,14 @@
     padding:2px;
 }
 
+.simavr_enabled_button{
+    background-color:#66a;
+}
+
+.simavr_disabled_button{
+    background-color:#aaa;
+}
+
 .simavr_display_button:hover{
     display:inline-block;
     cursor:pointer;
@@ -151,9 +167,8 @@
 .simavr_button{
     display:inline-block;
     padding:8px;
-    background-color:#66a;
     border-radius:5px;
-    height:25px;;
+    height:25px;
     color:white;
     margin:5px;
     cursor:pointer;
@@ -163,4 +178,28 @@
     display:inline-block;
     cursor:pointer;
     color:#f33;
+}
+
+.simavr_io_num{
+    width:3em;
+    border:3px solid black;
+    background-color:#363;
+    color:#ff4;
+    font-size:17pt;
+    padding:5px;
+}
+
+.simavr_io_switch{
+    width:3em;
+    border:2px solid black;
+    font-size:17pt;
+    padding:5px;
+}
+
+.simavr_io_switch_on{
+    background-color:#3f3;
+}
+
+.simavr_io_switch_off{
+    background-color:#f33;
 }

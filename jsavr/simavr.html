@@ -1,20 +1,39 @@
 <div class="simavr">
-  <div class="simavr_programming">
+  <div class="simavr_programming" ng-if="!running">
     <div class="simavr_controls">
-      <div class="simavr_button" ng-click="program_pm()">program</div>
-      <div class="simavr_button" ng-click="reset_program()" ng-if="reset_feature != 'no'">reset</div>
+      <div ng-class="'simavr_button ' + (running == true ? 'simavr_disabled_button' : 'simavr_enabled_button')" ng-click="program_pm()">program</div>
+      <div ng-class="'simavr_button ' + (running == true ? 'simavr_disabled_button' : 'simavr_enabled_button')" ng-click="reset_program()" ng-if="reset_feature != 'no'">reset</div>
     </div><br />
     <form><textarea ng-attr-id="simavr{{simid}}_program_area"></textarea></form>
-    <!-- <div id="editor" class="simavr_program" ng-init="ace_setup()"></div> -->
-    <!-- <script src="ed/ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script> -->
-    <!-- <textarea class="simavr_program" ng-model="program" ng-model-instant></textarea><br /> -->
     <br />
+  </div>
+  <div class="simavr_programming" ng-if="running">
+    <div class="simavr_controls">
+      <div style="width:100%;padding-top:10px;text-align:center;">Input/output panel</div>
+    </div>
+    <div class="simavr_output" ng-if="output_feature != 'full'">
+      Output LCD: <br />(Connected to pins 0-6 of D)<br />
+      <div class="simavr_io_num">
+	{{truncate(PORTD,7,false)}}
+      </div>
+
+      <br /><br />
+
+      Toggle switch--click to toggle:<br />(Connected to pin 7 of D): <br />
+      <div ng-class="'simavr_io_switch ' + (io_state.switch_state == 'ON' ? 'simavr_io_switch_on' : 'simavr_io_switch_off')" ng-click="io_switch()">
+	{{io_state.switch_state}}
+      </div>
+    </div>
+    <div class="simavr_output" ng-if="output_feature == 'full'">
+      Paceholder for full output panel
+    </div>
   </div>
   <div class="simavr_simulator">
     <div class="simavr_controls">
-      <div class="simavr_button" ng-click="step()">step</div>
-      <div class="simavr_button" ng-click="reset(false)">reset</div>
-      <div class="simavr_button" ng-click="reset(true)">clear</div>
+      <div ng-class="'simavr_button ' + (running == false ? 'simavr_disabled_button' : 'simavr_enabled_button')" ng-click="end()">end</div>
+      <div ng-class="'simavr_button ' + (running == false ? 'simavr_disabled_button' : 'simavr_enabled_button')" ng-click="step()">step</div>
+      <div ng-class="'simavr_button ' + (running == false ? 'simavr_disabled_button' : 'simavr_enabled_button')" ng-click="reset(false)">reset</div>
+      <div ng-class="'simavr_button ' + (running == false ? 'simavr_disabled_button' : 'simavr_enabled_button')" ng-click="reset(true)">clear</div>
       <div class="simavr_status">Status: {{status}}</div>
     </div><br />
     <div id="simavr_pm">
@@ -35,6 +54,7 @@
       <div class="simavr_title">Register file</div><br />
       <div class="simavr_display_button" ng-click="RF_display_mode = 'b'">[bin]</div>
       <div class="simavr_display_button" ng-click="RF_display_mode = 'd'">[dec]</div>
+      <div class="simavr_display_button" ng-click="RF_display_mode = '2'">[2com]</div>
       <div class="simavr_display_button" ng-click="RF_display_mode = 'h'">[hex]</div>
       <br />
       
@@ -72,10 +92,6 @@
       <div ng-class="'simavr_reg '+(is_updated('PORTD') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">PORTD: </span>{{PORTD}}</div><br />
       <div ng-class="'simavr_reg '+(is_updated('SPL') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">SPL: </span>{{SPL}}</div><br />
       <div ng-class="'simavr_reg '+(is_updated('SPH') ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label_long">SPH: </span>{{SPH}}</div>
-
-      Outputs:<br />
-      <div class="simavr_reg" ng-repeat="o in outputs track by $index">{{o}}</div>
-      <!-- <pre style="text-align:left;width:100%;"><span ng-repeat="o in outputs track by $index">{{o}}</span></pre> -->
     </div>
   </div>
 </div>

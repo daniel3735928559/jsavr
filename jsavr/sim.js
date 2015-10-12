@@ -6,8 +6,8 @@ app.controller("AvrSimController", function($scope){
     $scope.status = "Ready";
     $scope.running = false;
     $scope.outputs = [];
+    $scope.io_state = {'switch_state':"OFF"};
     $scope.cm_setup = function(){
-	$scope.reset_program();
 	var sim_textarea = document.getElementById("simavr"+$scope.simid+"_program_area");
 	$scope.debug_log($scope.simid,sim_textarea);
 	if(sim_textarea == null) return;
@@ -55,6 +55,7 @@ app.controller("AvrSimController", function($scope){
     $scope.error_line = 0;
     $scope.current_ram_data = [];
     $scope.reset_program = function(){
+	if($scope.running) return;
 	if($scope.text){
 	    $scope.debug_log("Using text");
 	    $scope.program = $scope.text;
@@ -104,7 +105,10 @@ app.controller("AvrSimController", function($scope){
     }
     $scope.display_rf = function(i){
 	if($scope.RF_display_mode == "d"){
-	    return $scope.RF[i];
+	    return $scope.truncate($scope.RF[i],8,false);
+	}
+	if($scope.RF_display_mode == "2"){
+	    return $scope.truncate($scope.RF[i],8,true);
 	}
 	else if($scope.RF_display_mode == "b"){
 	    var s = $scope.RF[i].toString(2);
@@ -116,7 +120,9 @@ app.controller("AvrSimController", function($scope){
 	}
     }
     $scope.program_pm = function(){
+	if($scope.running) return;
 	$scope.reset(true);
+	$scope.running = true;
 	$scope.program = $scope.editor.getValue();
 	var pm_data = $scope.preparse($scope.program);
 	var pm_addr = 0;
@@ -143,6 +149,7 @@ app.controller("AvrSimController", function($scope){
 	}
     }
     $scope.error_on_line = function(linenum, err_msg){
+	$scope.running = false;
 	$scope.status = "Error on line " + linenum + ": " + err_msg;
 	$scope.error_line = linenum;
 	if($scope.editor) $scope.editor.addLineClass(linenum, "background", "active_line");
@@ -296,54 +303,54 @@ app.controller("AvrSimController", function($scope){
     };
     $scope.formats = {
 	"4r8i":{
-	    "string":/ *r([0-9]+), *()(-?[a-zA-Z_0-9)(-]+|'..?') */,
+	    "string":/ *r([0-9]+), *()(-?[a-zA-Z_0-9)(-]+|'..?') *$/,
 	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " r" + r + ","+i;},
 	    "binary":"CCCCIIIIRRRRIIII",
 	    "validator":function(c, r, s, i){return 16 <= r && r < 32 && -128 <= i && i < 256;}},
 	"5r5s":{
-	    "string":/ *r([0-9]+), *r([0-9]+)() */,
+	    "string":/ *r([0-9]+), *r([0-9]+)() *$/,
 	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " r" + r + ",r"+s;},
 	    "binary":"CCCCCCSRRRRRSSSS",
 	    "validator":function(c, r, s, i){return 0 <= r && r < 32 && 0 <= s && s < 32;}},
 	"6s5r":{
-	    "string":/ *r([0-9]+), *([0-9]+)() */,
+	    "string":/ *r([0-9]+), *([0-9]+)() *$/,
 	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " r" + r + ","+s;},
 	    "binary":"CCCCCSSRRRRRSSSS",
 	    "validator":function(c, r, s, i){return 0 <= r && r < 32 && 0 <= s && s < 64;}},
 	"5r6s":{
-	    "string":/ *([0-9]+), *r([0-9]+)() */,
+	    "string":/ *([0-9]+), *r([0-9]+)() *$/,
 	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " " + r + ",r"+s;},
 	    "binary":"CCCCCSSRRRRRSSSS",
 	    "validator":function(c, r, s, i){return 0 <= r && r < 64 && 0 <= s && s < 32;}},
 	"5r":{
-	    "string":/ *r([0-9]+)()() */,
+	    "string":/ *r([0-9]+)()() *$/,
 	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " r" + r;},
 	    "binary":"CCCCCCCRRRRRCCCC",
 	    "validator":function(c, r, s, i){return 0 <= r && r < 32;}},
 	"5rX":{
-	    "string":/ *r([0-9]+)(), *(-[XYZ]|[XYZ]|[XYZ]\+) */,
+	    "string":/ *r([0-9]+)(), *(-[XYZ]|[XYZ]|[XYZ]\+) *$/,
 	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " r" + r + ","+i;},
 	    "binary":"CCCCCCCRRRRRCCCC",
 	    "validator":function(c, r, s, i){return 0 <= r && r < 32;}},
 	"X5r":{
-	    "string":/ *(-[XYZ]|[XYZ]|[XYZ]\+), *r([0-9]+)() */,
+	    "string":/ *(-[XYZ]|[XYZ]|[XYZ]\+), *r([0-9]+)() *$/,
 	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " " + r + ",r"+s;},
 	    "binary":"CCCCCCCRRRRRCCCC",
 	    "validator":function(c, r, s, i){return 0 <= s && s < 32;}},
 	"12i":{
-	    "string":/ *()()(-?[a-zA-Z_0-9)(]+) */,
+	    "string":/ *()()(-?[a-zA-Z_0-9)(]+) *$/,
 	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " " + i;},
 	    "binary":"CCCCIIIIIIIIIIII",
 	    "i_bits":12,
 	    "validator":function(c, r, s, i){return -2048 <= i && i < 2048;}},
 	"7i":{
-	    "string":/ *()()(-?[a-zA-Z_0-9)(]+) */,
+	    "string":/ *()()(-?[a-zA-Z_0-9)(]+) *$/,
 	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " " + i;},
 	    "binary":"CCCCCCIIIIIIICCC",
 	    "i_bits":7,
 	    "validator":function(c, r, s, i){return -64 <= i && i < 64;}},
 	"n":{
-	    "string":/ *()()() */,
+	    "string":/ *()()() *$/,
 	    "to_string":function(mnemonic,c,r,s,i){return mnemonic;},
 	    "binary":"CCCCCCCCCCCCCCCC",
 	    "validator":function(c, r, s, i){return true;}}
@@ -474,6 +481,10 @@ app.controller("AvrSimController", function($scope){
 	    else if(this.i == "'\\t'"){
 		this.i = 9;
 	    }
+	    else if(/^[XYZ]$|^[XYZ]\+$|^-[XYZ]$/.test(this.i)){
+		console.log("DOING NOTHING",this.i,data.i);
+		this.i = this.i;
+	    }
 	    else this.i = parseInt(this.i);
 	}
 	this.encoding = $scope.encode(this.format, this.c, this.r, this.s, this.i < 0 ? $scope.truncate(this.i,$scope.formats[this.format].i_bits,false) : this.i);
@@ -512,6 +523,7 @@ app.controller("AvrSimController", function($scope){
 	return acc.join("");
     }
     $scope.step = function(){
+	if(!$scope.running) return;
 	var i = $scope.PM[$scope.PC];
 	$scope.debug_log("i",i);
 	i.run();
@@ -647,12 +659,12 @@ app.controller("AvrSimController", function($scope){
 	    $scope.PC++;
 	    $scope.updated = ["PC","Z","C","N"];}},
 	"dec":{"format":"5r", "c": 1194, "exec":function(c, r, s, i){
-	    $scope.update_sreg($scope.RF[r] - 1, true, true, true);
+	    $scope.update_sreg($scope.RF[r] - 1, true, false, true);
 	    $scope.RF[r] = $scope.truncate($scope.RF[r] - 1,8,true);
 	    $scope.PC++;
 	    $scope.updated = [r,"PC"];}},
 	"inc":{"format":"5r", "c": 1187, "exec":function(c, r, s, i){
-	    $scope.update_sreg($scope.RF[r] + 1, true, true, true);
+	    $scope.update_sreg($scope.RF[r] + 1, true, false, true);
 	    $scope.RF[r] = $scope.truncate($scope.RF[r] + 1,8,true);
 	    $scope.PC++;
 	    $scope.updated = [r,"PC"];}},
@@ -771,15 +783,35 @@ app.controller("AvrSimController", function($scope){
 	"halt":{"format":"n", "c": 1, "exec":function(c, r, s, i){
 	    $scope.reset(false);}}
     };
+    $scope.io_switch = function(){
+	if($scope.io_state.switch_state == "ON"){
+	    $scope.io_state.switch_state = "OFF";
+	    $scope.PIND = 0;
+	}
+	else if($scope.io_state.switch_state == "OFF"){
+	    $scope.io_state.switch_state = "ON";
+	    $scope.PIND = 128;
+	}
+    }
     $scope.output = function(){
 	var out_val = $scope.PORTD;
 	$scope.outputs.push(out_val);
 	//$scope.outputs.push(String.fromCharCode(out_val));
     }
+    $scope.initialize = function(){
+	$scope.reset_program();
+	$scope.cm_setup();
+    }
+    $scope.end = function(){
+	if(!$scope.running) return;
+	console.log("END");
+	$scope.running = false;
+	setTimeout($scope.cm_setup, 0);
+    }
     $scope.reset(true);
     $scope.original_program = $scope.program;
-    setTimeout($scope.cm_setup, 0);
-    })
+    setTimeout($scope.initialize, 0);
+})
     .directive('simAvr',function(){
 	return {
 	    restrict: 'E',
