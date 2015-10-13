@@ -763,11 +763,9 @@ app.controller("AvrSimController", function($scope){
 	    var PCL = $scope.PC % 256;
 	    var PCH = Math.floor($scope.PC / 256);
 	    var SP = $scope.SPH * 256 + $scope.SPL;
-	    console.log("RCALL1",PCH,PCL,SP)
 	    $scope.RAM[SP] = PCH;
 	    $scope.decSP();
 	    var SP = $scope.SPH * 256 + $scope.SPL;
-	    console.log("RCALL2",PCH,PCL,SP)
 	    $scope.RAM[SP] = PCL;
 	    $scope.decSP();
 	    $scope.PC = $scope.truncate($scope.PC + i,16,false);
