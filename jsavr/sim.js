@@ -7,6 +7,7 @@ app.controller("AvrSimController", function($scope){
     $scope.running = false;
     $scope.outputs = [];
     $scope.io_state = {'switch_state':"OFF"};
+    $scope.steps = {'count':1};
     $scope.cm_setup = function(){
 	var sim_textarea = document.getElementById("simavr"+$scope.simid+"_program_area");
 	$scope.debug_log($scope.simid,sim_textarea);
@@ -67,10 +68,16 @@ app.controller("AvrSimController", function($scope){
     }
     
     $scope.reset = function(pm_reset){
+	$scope.steps = {'count':1};
 	$scope.PC = 0;
 	$scope.Z = 0;
 	$scope.C = 0;
 	$scope.N = 0;
+	$scope.PIND = 0;
+	$scope.PORTD = 0;
+	$scope.DDRD = 0;
+	$scope.SPH = 0;
+	$scope.SPL = 0;
 	$scope.updated = [];
 	$scope.outputs = [];
 	$scope.mux = new $scope.output_mux();
@@ -134,7 +141,7 @@ app.controller("AvrSimController", function($scope){
 		if(!inst) continue;
 		if(inst.error){
 		    $scope.error_on_line(datum.line, inst.error);
-		    break;
+		    return;
 		}
 		$scope.PM[pm_addr] = inst;
 		pm_addr++;
@@ -143,12 +150,13 @@ app.controller("AvrSimController", function($scope){
 		var inst = $scope.decode(datum.word,pm_addr);
 		if(inst.error){
 		    $scope.error_on_line(datum.line, inst.error);
-		    break;
+		    return;
 		}
 		$scope.PM[pm_addr] = inst;
 		pm_addr++;
 	    }
 	}
+	$scope.status = "Ready";
     }
     $scope.error_on_line = function(linenum, err_msg){
 	$scope.running = false;
@@ -162,9 +170,14 @@ app.controller("AvrSimController", function($scope){
 	var pm_offset = 0;
 	var ram_offset = 1024;
 	for(var i = 0; i < lines.length; i++){
+	    var pieces = lines[i].match(/^((?:[^";]|';'|"(?:[^\\"]+|\\(?:\\\\)*[\\"])*")*)(;.*)?$/)
+	    $scope.debug_log("P",pieces);
+	    if(!pieces[1]) continue;
+	    lines[i] = pieces[1].trim();
 	    var is_inst = true;
 	    for(var d in $scope.directives){
 		var matches = lines[i].match($scope.directives[d].regex)
+		$scope.debug_log("D",lines[i],d,matches);
 		if(matches){
 		    // process needs to return:
 		    // - What it inserts to PM (pm_data)
@@ -218,8 +231,7 @@ app.controller("AvrSimController", function($scope){
     }
     $scope.parse = function(inst,addr){
 	$scope.debug_log(inst)
-	if(/^[ \t]*;/.test(inst)) return null;
-	var matches = inst.match(/^ *([a-zA-Z]+) *((?:[^;]|';')*) *(;.*)?$/)
+	var matches = inst.match(/^[ \t]*([a-zA-Z]+)[ \t]*((?:[^;]|';')*)[ \t]*$/)
 	var mnemonic = matches[1];
 	var operand = matches[2];
 	$scope.debug_log(mnemonic, "|||", operand);
@@ -266,12 +278,12 @@ app.controller("AvrSimController", function($scope){
 	return s;
     }
     $scope.directives = {
-	"label":{"regex":/^ *([a-zA-Z_][a-zA-Z0-9_]*): *$/,"process":function(args){
+	"label":{"regex":/^([a-zA-Z_][a-zA-Z0-9_]*):$/,"process":function(args){
 	    return {"symbol":args[1],
 		    "symbol_type":"pm",
 		   };
 	}},
-	"word":{"regex":/^ *\.word ([0-9,]+) *$/,"process":function(args){
+	"word":{"regex":/^\.word ([0-9,]+)$/,"process":function(args){
 	    var rdata = args[1].split(",");
 	    for(var i = 0; i < rdata.length; i++){
 		rdata[i] = $scope.truncate(parseInt(rdata[i]),16,false);
@@ -295,7 +307,7 @@ app.controller("AvrSimController", function($scope){
 	    var str = $scope.handle_string_escapes(args[2]);
 	    var rdata = []
 	    for(var i = 0; i < str.length; i++){
-		rdata.push($scope.truncate(str.charCodeAt(i),8),true);
+		rdata.push($scope.truncate(str.charCodeAt(i),8,true));
 	    }
 	    return {"symbol":args[1],
 		    "symbol_type":"ram",
@@ -465,6 +477,7 @@ app.controller("AvrSimController", function($scope){
 	    else if(this.i in $scope.symbols){
 		this.i = $scope.symbols[this.i];
 		var fmt = $scope.formats[this.format];
+		$scope.debug_log($scope.symbols,fmt.i_bits);
 		if(fmt.i_bits){
 		    this.i = $scope.truncate(this.i - this.addr - 1,fmt.i_bits,true);
 		}
@@ -526,9 +539,12 @@ app.controller("AvrSimController", function($scope){
     }
     $scope.step = function(){
 	if(!$scope.running) return;
-	var i = $scope.PM[$scope.PC];
-	$scope.debug_log("i",i);
-	i.run();
+	$scope.debug_log($scope.steps.count);
+	for(var k = 0; k < $scope.steps.count; k++){
+	    var i = $scope.PM[$scope.PC];
+	    $scope.debug_log("i",i);
+	    i.run();
+	}
     }
     $scope.raise_error = function(s){
 	$scope.status = "Error: " + s;

@@ -31,9 +31,10 @@
   <div class="simavr_simulator">
     <div class="simavr_controls">
       <div ng-class="'simavr_button ' + (running == false ? 'simavr_disabled_button' : 'simavr_enabled_button')" ng-click="end()">end</div>
-      <div ng-class="'simavr_button ' + (running == false ? 'simavr_disabled_button' : 'simavr_enabled_button')" ng-click="step()">step</div>
       <div ng-class="'simavr_button ' + (running == false ? 'simavr_disabled_button' : 'simavr_enabled_button')" ng-click="reset(false)">reset</div>
       <div ng-class="'simavr_button ' + (running == false ? 'simavr_disabled_button' : 'simavr_enabled_button')" ng-click="reset(true)">clear</div>
+      <div ng-class="'simavr_button ' + (running == false ? 'simavr_disabled_button' : 'simavr_enabled_button')" ng-click="step()">step</div>
+      <input class="simavr_mem_start" type="number" ng-model="steps.count" ng-if="running == true"></input>
       <div class="simavr_status">Status: {{status}}</div>
     </div><br />
     <div id="simavr_pm">
