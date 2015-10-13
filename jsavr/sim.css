@@ -194,6 +194,7 @@
     border:2px solid black;
     font-size:17pt;
     padding:5px;
+    cursor:pointer;
 }
 
 .simavr_io_switch_on{

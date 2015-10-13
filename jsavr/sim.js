@@ -48,8 +48,8 @@ app.controller("AvrSimController", function($scope){
     $scope.SPH = 0;
     $scope.SPL = 0;
     
-    $scope.RAM_size = 32;
-    $scope.PM_size = 32;
+    $scope.RAM_size = 65536;
+    $scope.PM_size = 65536;
     $scope.RF_size = 32;
     $scope.updated = [];
     $scope.error_line = 0;
@@ -77,7 +77,8 @@ app.controller("AvrSimController", function($scope){
 	for(var i = 0; i < $scope.RF_size; i++) $scope.RF[i] = 0;
 	for(var i = 0; i < $scope.RAM_size; i++) $scope.RAM[i] = 0;
 	for(var i = 0; i < $scope.IORF_size; i++) $scope.IORF[i] = 0;
-	if(pm_reset){ for(var i = 0; i < $scope.PM_size; i++) $scope.PM[i] = $scope.parse("nop",i); }
+	var nop = $scope.parse("nop",0);
+	if(pm_reset){ for(var i = 0; i < $scope.PM_size; i++){ nop.addr = i; $scope.PM[i] = nop; }}
 	if(!pm_reset){ for(var i = 0; i < $scope.current_ram_data.length; i++) $scope.RAM[i+1024] = $scope.current_ram_data[i]; }
 	if($scope.editor) $scope.editor.removeLineClass($scope.error_line, "background", "active_line");
     }
@@ -130,6 +131,7 @@ app.controller("AvrSimController", function($scope){
 	    var datum = pm_data[i];
 	    if(datum.inst){
 		var inst = $scope.parse(datum.inst,pm_addr);
+		if(!inst) continue;
 		if(inst.error){
 		    $scope.error_on_line(datum.line, inst.error);
 		    break;
@@ -216,7 +218,8 @@ app.controller("AvrSimController", function($scope){
     }
     $scope.parse = function(inst,addr){
 	$scope.debug_log(inst)
-	var matches = inst.match(/^ *([^ ]+)* *([^;]*) *(;.*)?$/)
+	if(/^[ \t]*;/.test(inst)) return null;
+	var matches = inst.match(/^ *([a-zA-Z]+) *((?:[^;]|';')*) *(;.*)?$/)
 	var mnemonic = matches[1];
 	var operand = matches[2];
 	$scope.debug_log(mnemonic, "|||", operand);
@@ -482,7 +485,6 @@ app.controller("AvrSimController", function($scope){
 		this.i = 9;
 	    }
 	    else if(/^[XYZ]$|^[XYZ]\+$|^-[XYZ]$/.test(this.i)){
-		console.log("DOING NOTHING",this.i,data.i);
 		this.i = this.i;
 	    }
 	    else this.i = parseInt(this.i);
@@ -538,7 +540,7 @@ app.controller("AvrSimController", function($scope){
     }
     $scope.update_sreg = function(result, z, c, n){
 	if(z) $scope.Z = $scope.truncate(result,8,false) == 0 ? 1 : 0;
-	if(c) $scope.C = result >= 128 || result < -128 ? 1 : 0;
+	if(c) $scope.C = result >= 256 || result < 0 ? 1 : 0;
 	if(n) $scope.N = $scope.truncate(result,8,true) <0 ? 1 : 0;
     }
     $scope.read_IO = function(s){
@@ -558,10 +560,11 @@ app.controller("AvrSimController", function($scope){
 	else if(s == 62) $scope.SPH = $scope.truncate(val,8,false);
     }
     $scope.inc_ptr = function(reg){
-	$scope.RF[reg]++;
-	if($scope.RF[reg] == -1){
-	    $scope.RF[reg+1] = $scope.truncate($scope.RF[reg+1]+1,8,true);
+	if($scope.RF[reg] == -1 || $scope.RF[reg] == 255){
+	    $scope.RF[reg] = 0
+	    $scope.RF[reg+1] = $scope.truncate($scope.RF[reg+1]+1,8,false);
 	}
+	else $scope.RF[reg]++;
 	if($scope.RF[reg] == 128){
 	    $scope.RF[reg] = -128;
 	}
@@ -569,7 +572,7 @@ app.controller("AvrSimController", function($scope){
     $scope.dec_ptr = function(reg){
 	$scope.RF[reg]--;
 	if($scope.RF[reg] == -1){
-	    $scope.RF[reg+1] = $scope.truncate($scope.RF[reg+1]-1,8,true);
+	    $scope.RF[reg+1] = $scope.truncate($scope.RF[reg+1]-1,8,false);
 	}
 	if($scope.RF[reg] < -128){
 	    $scope.RF[reg] = 127;
@@ -678,12 +681,12 @@ app.controller("AvrSimController", function($scope){
 	    if(i == "X" || i == "-X" || i == "X+") reg = 26;
 	    if(i == "Y" || i == "-Y" || i == "Y+") reg = 28;
 	    if(i == "Z" || i == "-Z" || i == "Z+") reg = 30;
-	    var ptr = $scope.RF[reg]+256*$scope.RF[reg+1];
-	    $scope.updated = [r,"PC"];
 	    if(i[0] == "-"){
 		$scope.updated.push(reg);
 		$scope.dec_ptr(reg);
 	    }
+	    var ptr = $scope.truncate($scope.RF[reg],8,false)+256*$scope.truncate($scope.RF[reg+1],8,false);
+	    $scope.updated = [r,"PC"];
 	    $scope.RF[r] = $scope.RAM[ptr];
 	    if(i[1] == "+"){
 		$scope.updated.push(reg);
@@ -693,17 +696,16 @@ app.controller("AvrSimController", function($scope){
 	"st":{"format":"X5r", "c": 1180, "exec":function(c, r, s, i){
 	    i = r;
 	    r = s;
-	    console.log("IIIIIII",i);
 	    var reg = 0;
 	    if(i == "X" || i == "-X" || i == "X+") reg = 26;
 	    if(i == "Y" || i == "-Y" || i == "Y+") reg = 28;
 	    if(i == "Z" || i == "-Z" || i == "Z+") reg = 30;
-	    var ptr = $scope.RF[reg]+256*$scope.RF[reg+1];
-	    $scope.updated = ["["+ptr+"]","PC"];
 	    if(i[0] == "-"){
 		$scope.updated.push(reg);
 		$scope.dec_ptr(reg);
 	    }
+	    var ptr = $scope.truncate($scope.RF[reg],8,false)+256*$scope.truncate($scope.RF[reg+1],8,false);
+	    $scope.updated = ["["+ptr+"]","PC"];
 	    $scope.RAM[ptr] = $scope.RF[r];
 	    $scope.PC++;
 	    if(i[1] == "+"){
@@ -721,12 +723,12 @@ app.controller("AvrSimController", function($scope){
 	    $scope.PC = $scope.truncate($scope.PC + 1 + ($scope.Z == 0 ? (i <= 64 ? i : i-128) : 0),16,false);
 	    $scope.updated = ["PC"];}},
 	"brsh":{"format":"7i", "c": 488, "exec":function(c, r, s, i){
-	    $scope.PC = $scope.truncate($scope.PC + 1 + ($scope.C == 1 ? (i <= 64 ? i : i-128) : 0),16,false);
-	    $scope.updated = ["PC"];}},
-	"brlo":{"format":"7i", "c": 480, "exec":function(c, r, s, i){
 	    $scope.PC = $scope.truncate($scope.PC + 1 + ($scope.C == 0 ? (i <= 64 ? i : i-128) : 0),16,false);
 	    $scope.updated = ["PC"];}},
-	"in":{"format":"5r6s", "c": 22, "exec":function(c, r, s, i){
+	"brlo":{"format":"7i", "c": 480, "exec":function(c, r, s, i){
+	    $scope.PC = $scope.truncate($scope.PC + 1 + ($scope.C == 1 ? (i <= 64 ? i : i-128) : 0),16,false);
+	    $scope.updated = ["PC"];}},
+	"in":{"format":"6s5r", "c": 22, "exec":function(c, r, s, i){
 	    $scope.RF[r] = $scope.read_IO(s);
 	    $scope.PC++;
 	    $scope.updated = [r,"PC"];}},
@@ -740,7 +742,6 @@ app.controller("AvrSimController", function($scope){
 	"asr":{"format":"5r", "c": 1189, "exec":function(c, r, s, i){
 	    var C = $scope.RF[r]%2 == 0 ? 0 : 1;
 	    $scope.RF[r] = $scope.truncate($scope.RF[r] >> 1,8,true);
-	    console.log("AAAAAAA",$scope.RF[r],$scope.truncate($scope.RF[r],8,false));
 	    $scope.update_sreg($scope.RF[r], true, false, true);
 	    $scope.C = C;
 	    $scope.PC++;
@@ -758,15 +759,18 @@ app.controller("AvrSimController", function($scope){
 	    $scope.PC++;
 	    $scope.updated = ["PC","SPH","SPL"];}},
 	"rcall":{"format":"12i", "c": 13, "exec":function(c, r, s, i){
+	    $scope.PC++;
 	    var PCL = $scope.PC % 256;
 	    var PCH = Math.floor($scope.PC / 256);
 	    var SP = $scope.SPH * 256 + $scope.SPL;
+	    console.log("RCALL1",PCH,PCL,SP)
 	    $scope.RAM[SP] = PCH;
 	    $scope.decSP();
 	    var SP = $scope.SPH * 256 + $scope.SPL;
+	    console.log("RCALL2",PCH,PCL,SP)
 	    $scope.RAM[SP] = PCL;
 	    $scope.decSP();
-	    $scope.PC++;
+	    $scope.PC = $scope.truncate($scope.PC + i,16,false);
 	    $scope.updated = ["PC","["+SP+"]","SPH","SPL"];}},
 	"ret":{"format":"n", "c": 38152, "exec":function(c, r, s, i){
 	    $scope.incSP();
@@ -781,7 +785,7 @@ app.controller("AvrSimController", function($scope){
 	    $scope.PC++;
 	    $scope.updated = ["PC"];}},
 	"halt":{"format":"n", "c": 1, "exec":function(c, r, s, i){
-	    $scope.reset(false);}}
+	    $scope.end();}}
     };
     $scope.io_switch = function(){
 	if($scope.io_state.switch_state == "ON"){
@@ -804,7 +808,6 @@ app.controller("AvrSimController", function($scope){
     }
     $scope.end = function(){
 	if(!$scope.running) return;
-	console.log("END");
 	$scope.running = false;
 	setTimeout($scope.cm_setup, 0);
     }
