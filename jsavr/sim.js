@@ -711,6 +711,11 @@ app.controller("AvrSimController", function($scope){
 	    $scope.RF[r] = $scope.truncate($scope.RF[r] + 1,8,false);
 	    $scope.PC++;
 	    $scope.updated = [r,"PC"];}},
+	"neg":{"format":"5r", "c": 1185, "exec":function(c, r, s, i){
+	    $scope.update_sreg(-$scope.RF[r], true, true, true);
+	    $scope.RF[r] = $scope.truncate(-$scope.RF[r],8,false);
+	    $scope.PC++;
+	    $scope.updated = [r,"PC"];}},
 	"com":{"format":"5r", "c": 1184, "exec":function(c, r, s, i){
 	    $scope.update_sreg(~($scope.RF[r]), true, false, true);
 	    $scope.RF[r] = $scope.truncate(~($scope.RF[r]),8,false);
