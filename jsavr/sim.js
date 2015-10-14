@@ -37,7 +37,7 @@ app.controller("AvrSimController", function($scope){
 	$scope.editor.setValue($scope.program);
     }
     $scope.symbols = {};
-    $scope.PC_display_mode = "t";
+    $scope.PM_display_mode = "t";
     $scope.RAM_display_mode = "d";
     $scope.RF_display_mode = "d";
     $scope.RAM = [];
@@ -454,6 +454,15 @@ app.controller("AvrSimController", function($scope){
 	    
 	}
     }
+    $scope.set_PM_display_mode = function(m){
+	$scope.PM_display_mode = m;
+    }
+    $scope.set_RAM_display_mode = function(m){
+	$scope.RAM_display_mode = m;
+    }
+    $scope.set_RF_display_mode = function(m){
+	$scope.RF_display_mode = m;
+    }
     $scope.instruction = function(text, mnemonic, data, exec, addr){
 	thislabel = false;
 	this.addr = addr;
@@ -509,17 +518,17 @@ app.controller("AvrSimController", function($scope){
 	$scope.debug_log(this.text, this.c, this.r, this.s, this.i, this.mnemonic);
 	var self = this;
 	this.display = function(){
-	    if($scope.PC_display_mode == "t"){
+	    if($scope.PM_display_mode == "t"){
 		return $scope.formats[self.format].to_string(self.mnemonic,self.c,self.r,self.s,self.i);
 	    }
-	    else if($scope.PC_display_mode == "d"){
+	    else if($scope.PM_display_mode == "d"){
 		return self.encoding;
 	    }
-	    else if($scope.PC_display_mode == "h"){
+	    else if($scope.PM_display_mode == "h"){
 		var s = self.encoding.toString(16);
 		return "0x"+smul("0",4 - s.length)+s;
 	    }
-	    else if($scope.PC_display_mode == "b"){
+	    else if($scope.PM_display_mode == "b"){
 		var s = self.encoding.toString(2);
 		return smul("0",16 - s.length) + s;
 	    }

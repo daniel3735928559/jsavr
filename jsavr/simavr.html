@@ -52,10 +52,10 @@
     </div><br />
     <div id="simavr_pm">
       <div class="simavr_title">PM at <input class="simavr_mem_start" type="number" ng-model="display_pm_start"></input></div><br />
-      <div class="simavr_display_button" ng-click="PC_display_mode = 't'">[text]</div>
-      <div class="simavr_display_button" ng-click="PC_display_mode = 'b'">[bin]</div>
-      <div class="simavr_display_button" ng-click="PC_display_mode = 'd'">[dec]</div>
-      <div class="simavr_display_button" ng-click="PC_display_mode = 'h'">[hex]</div>
+      <div class="simavr_display_button" ng-click="set_PM_display_mode('t')">[text]</div>
+      <div class="simavr_display_button" ng-click="set_PM_display_mode('b')">[bin]</div>
+      <div class="simavr_display_button" ng-click="set_PM_display_mode('d')">[dec]</div>
+      <div class="simavr_display_button" ng-click="set_PM_display_mode('h')">[hex]</div>
       <div ng-repeat="i in PM.slice(display_pm_start,display_pm_start+display_pm_length) track by $index">
 	<div ng-class="'simavr_pm '+ (display_pm_start+$index == PC ? 'simavr_active' : 'simavr_normal')">
 	  <span class="simavr_label_long">{{display_pm_start+$index}}: </span>{{PM[display_pm_start+$index].display();}}
@@ -66,19 +66,19 @@
     </div>
     <div id="simavr_rf">
       <div class="simavr_title">Register file</div><br />
-      <div class="simavr_display_button" ng-click="RF_display_mode = 'b'">[bin]</div>
-      <div class="simavr_display_button" ng-click="RF_display_mode = 'd'">[dec]</div>
-      <div class="simavr_display_button" ng-click="RF_display_mode = '2'">[2com]</div>
-      <div class="simavr_display_button" ng-click="RF_display_mode = 'h'">[hex]</div>
+      <div class="simavr_display_button" ng-click="set_RF_display_mode('b')">[bin]</div>
+      <div class="simavr_display_button" ng-click="set_RF_display_mode('d')">[dec]</div>
+      <div class="simavr_display_button" ng-click="set_RF_display_mode('2')">[2com]</div>
+      <div class="simavr_display_button" ng-click="set_RF_display_mode('h')">[hex]</div>
       <br />
       
       <span ng-repeat="r in RF track by $index"><div ng-class="'simavr_reg '+ (is_updated($index) ? 'simavr_updated' : 'simavr_normal')"><span class="simavr_label">{{$index}}: </span>{{display_rf($index)}}</div><br ng-if="($index)%2 == 1" /></span><br />
     </div>
     <div id="simavr_ram">
       <div class="simavr_title">RAM at <input class="simavr_mem_start" type="number" ng-model="display_ram_start"></input></div><br />
-      <div class="simavr_display_button" ng-click="RAM_display_mode = 'b'">[bin]</div>
-      <div class="simavr_display_button" ng-click="RAM_display_mode = 'd'">[dec]</div>
-      <div class="simavr_display_button" ng-click="RAM_display_mode = 'h'">[hex]</div>
+      <div class="simavr_display_button" ng-click="set_RAM_display_mode('b')">[bin]</div>
+      <div class="simavr_display_button" ng-click="set_RAM_display_mode('d')">[dec]</div>
+      <div class="simavr_display_button" ng-click="set_RAM_display_mode('h')">[hex]</div>
       <div ng-repeat="i in RAM.slice(display_ram_start,display_ram_start+display_ram_length) track by $index">
 	<div ng-class="'simavr_ram '+ (is_updated('['+(display_ram_start+$index)+']') ? 'simavr_updated' : 'simavr_normal')">
 	  <span class="simavr_label_long">{{display_ram_start+$index}}: </span>{{display_ram(display_ram_start+$index);}}
