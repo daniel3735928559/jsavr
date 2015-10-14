@@ -324,6 +324,7 @@ app.controller("AvrSimController", function($scope){
 	    "string":/ *r([0-9]+), *()(-?[a-zA-Z_0-9)(-]+|'..?') *$/,
 	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " r" + r + ","+i;},
 	    "binary":"CCCCIIIIRRRRIIII",
+	    "i_bits":8,
 	    "validator":function(c, r, s, i){return 16 <= r && r < 32 && -128 <= i && i < 256;}},
 	"5r5s":{
 	    "string":/ *r([0-9]+), *r([0-9]+)() *$/,
@@ -407,6 +408,9 @@ app.controller("AvrSimController", function($scope){
 		if(fmt.binary[15-j] == "S") data.s = (data.s * 2) + ((x >> j) % 2);
 		if(fmt.binary[15-j] == "I") data.i = (data.i * 2) + ((x >> j) % 2);
 	    }
+	    if(f == "4r8i") data.r += 16;
+	    if(f == "12i") data.i = $scope.truncate(data.i,12,true);
+	    if(f == "7i") data.i = $scope.truncate(data.i,7,true);
 	    for(var mnemonic in $scope.instructions){
 		inst = $scope.instructions[mnemonic];
 		if(inst.format == f && inst.c == data.c){
