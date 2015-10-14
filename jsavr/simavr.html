@@ -80,7 +80,7 @@
       <div class="simavr_display_button" ng-click="set_RAM_display_mode('d')">[dec]</div>
       <div class="simavr_display_button" ng-click="set_RAM_display_mode('h')">[hex]</div>
       <div ng-repeat="i in RAM.slice(display_ram_start,display_ram_start+display_ram_length) track by $index">
-	<div ng-class="'simavr_ram '+ (is_updated('['+(display_ram_start+$index)+']') ? 'simavr_updated' : 'simavr_normal')">
+	<div ng-class="'simavr_ram '+ (is_ram_updated(display_ram_start+$index) ? 'simavr_updated' : 'simavr_normal')">
 	  <span class="simavr_label_long">{{display_ram_start+$index}}: </span>{{display_ram(display_ram_start+$index);}}
 	</div>
 	<br />
