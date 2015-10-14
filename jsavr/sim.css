@@ -1,7 +1,8 @@
 .simavr{
     display:inline-block;
     width:73em;
-    height:40em;
+    /* min-height:40em; */
+    font-size:10pt;
 }
 #simavr_rf{
     float:left;
@@ -110,27 +111,31 @@
 .simavr_programming{
     display:inline-block;
     float:left;
+    width:70%;
+}
+
+.simavr_output_container{
+    display:inline-block;
+    float:left;
     width:25%;
-    height:100%;
 }
 
 .simavr_simulator{
     display:inline-block;
     float:left;
     width:75%;
-    height:100%;
 }
 
 .simavr_output{
     display:inline-block;
     padding:5px;
     width:90%;
-    height:100%;
     border:1px solid #aaa;
+    overflow-x:scroll;
+    overflow-y:scroll;
 }
 
 .simavr_program{
-    height:85%;
     width:90%;
 }
 
@@ -190,6 +195,7 @@
 }
 
 .simavr_io_switch{
+    display:inline-block;
     width:3em;
     border:3px solid black;
     font-size:17pt;

@@ -1,38 +1,51 @@
 <div class="simavr">
   <div class="simavr_programming" ng-if="!running">
     <div class="simavr_controls">
-      <div ng-class="'simavr_button ' + (running == true ? 'simavr_disabled_button' : 'simavr_enabled_button')" ng-click="program_pm()">program</div>
+      <div ng-class="'simavr_button ' + (running == true ? 'simavr_disabled_button' : 'simavr_enabled_button')" ng-click="program_pm()">run</div>
       <div ng-class="'simavr_button ' + (running == true ? 'simavr_disabled_button' : 'simavr_enabled_button')" ng-click="reset_program()" ng-if="reset_feature != 'no'">reset</div>
     </div><br />
     <form><textarea ng-attr-id="simavr{{simid}}_program_area"></textarea></form>
     <br />
   </div>
-  <div class="simavr_programming" ng-if="running">
+  <div class="simavr_output_container" ng-if="running">
     <div class="simavr_controls">
-      <div style="width:100%;padding-top:10px;text-align:center;">Input/output panel</div>
+      <div ng-class="'simavr_button ' + (running == false ? 'simavr_disabled_button' : 'simavr_enabled_button')" ng-click="end()">end</div>
+      <div style="margin-top:10px;display:inline-block;">
+	<select name="output_select" ng-model="output_type.selection">
+	  <option value="program">View Program</option>
+	  <option value="simple">View Simple I/O</option>
+	  <option value="complex">View Complex I/O</option>
+	</select>
+      </div>
     </div>
-    <div class="simavr_output" ng-if="output_feature != 'full'">
-      Output LCD: <br />(Connected to pins 0-6 of D)<br />
+    <div class="simavr_output" ng-if="output_type.selection == 'program'">
+      <b>Program: </b>
+      <pre>{{program}}</pre>
+    </div>
+    <div class="simavr_output" ng-if="output_type.selection == 'simple'">
+      Output LCD: <br />(Connected to pins 0-7 of D)<br />
       <div class="simavr_io_num">
-	{{truncate(PORTD,7,false)}}
+	{{truncate(PORTD,8,false)}}
       </div>
 
       <br /><br />
 
-      Toggle switch--click to toggle:<br />(Connected to pin 7 of D): <br />
-      <div ng-class="'simavr_io_switch ' + (io_state.switch_state == 'ON' ? 'simavr_io_switch_on' : 'simavr_io_switch_off')" ng-click="io_switch()">
-	{{io_state.switch_state}}
+      Toggle switches--click to toggle:<br />(Connected to pins 0-7 of D): <br />
+      <div style="display:inline-block;" ng-repeat="i in [0,1,2,3,4,5,6,7]">
+	{{i}}:
+	<div ng-class="'simavr_io_switch ' + (io_state.switch_state[i] == 'ON' ? 'simavr_io_switch_on' : 'simavr_io_switch_off')" ng-click="io_switch(i)">
+	  {{io_state.switch_state[i]}}
+	</div>
+	<br /><br />
       </div>
     </div>
-    <div class="simavr_output" ng-if="output_feature == 'full'">
+    <div class="simavr_output" ng-if="output_type.selection == 'complex'">
       Paceholder for full output panel
     </div>
   </div>
-  <div class="simavr_simulator">
+  <div class="simavr_simulator" ng-if="running">
     <div class="simavr_controls">
-      <div ng-class="'simavr_button ' + (running == false ? 'simavr_disabled_button' : 'simavr_enabled_button')" ng-click="end()">end</div>
       <div ng-class="'simavr_button ' + (running == false ? 'simavr_disabled_button' : 'simavr_enabled_button')" ng-click="reset(false)">reset</div>
-      <div ng-class="'simavr_button ' + (running == false ? 'simavr_disabled_button' : 'simavr_enabled_button')" ng-click="reset(true)">clear</div>
       <div ng-class="'simavr_button ' + (running == false ? 'simavr_disabled_button' : 'simavr_enabled_button')" ng-click="step()">step</div>
       <input class="simavr_mem_start" type="number" ng-model="steps.count" ng-if="running == true"></input>
       <div class="simavr_status">Status: {{status}}</div>
