@@ -943,6 +943,7 @@ app.controller("AvrSimController", function($scope){
 			scope.change_program(new_prog);
 		    }
 		    scope.control.get_program = function(){
+			if(scope.editor) scope.program = scope.editor.getValue();
 			return scope.program;
 		    }
 		    scope.control.get_PM = function(addr){
