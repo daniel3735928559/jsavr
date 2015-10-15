@@ -108,13 +108,11 @@ app.controller("AvrSimController", function($scope){
 	if($scope.RAM_display_mode == "d"){
 	    return $scope.RAM[i];
 	}
-	else if($scope.RAM_display_mode == "b"){
-	    var s = $scope.RAM[i].toString(2);
-	    return smul("0",8-s.length)+s;
+	else if($scope.RAM_display_mode == "2"){
+	    return $scope.truncate($scope.RAM[i],8,true);
 	}
-	else if($scope.RAM_display_mode == "h"){
-	    var s = $scope.RAM[i].toString(16);
-	    return "0x"+smul("0",2-s.length)+s;
+	else if($scope.RAM_display_mode == "c"){
+	    return String.fromCharCode($scope.RAM[i])
 	}
     }
     $scope.display_rf = function(i){
