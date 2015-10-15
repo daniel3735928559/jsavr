@@ -139,6 +139,10 @@ app.controller("AvrSimController", function($scope){
 	$scope.running = true;
 	$scope.program = $scope.editor.getValue();
 	var pm_data = $scope.preparse($scope.program);
+	if(!pm_data){
+	    $scope.running = false;
+	    return;
+	}
 	var pm_addr = 0;
 	for(var i = 0; i < pm_data.length; i++){
 	    var datum = pm_data[i];
@@ -176,8 +180,13 @@ app.controller("AvrSimController", function($scope){
 	var pm_offset = 0;
 	var ram_offset = 1024;
 	for(var i = 0; i < lines.length; i++){
-	    var pieces = lines[i].match(/^((?:[^";]|';'|"(?:[^\\"]+|\\(?:\\\\)*[\\"])*")*)(;.*)?$/)
+	    console.log("LL",lines[i])
+	    var pieces = lines[i].match(/^((?:[^";]|';'|"(?:[^\\"]+|\\(?:\\\\)*[nt\\"])*")*)(;.*)?$/)
 	    $scope.debug_log("P",pieces);
+	    if(!pieces){
+		$scope.error_on_line(i, "Invalid line: "+i);
+		return;
+	    }
 	    if(!pieces[1]) continue;
 	    lines[i] = pieces[1].trim();
 	    var is_inst = true;
@@ -238,6 +247,9 @@ app.controller("AvrSimController", function($scope){
     $scope.parse = function(inst,addr){
 	$scope.debug_log(inst)
 	var matches = inst.match(/^[ \t]*([a-zA-Z]+)[ \t]*((?:[^;]|';')*)[ \t]*$/)
+	if(!matches){
+	    return {"error":"Line does not match any directive or instruction"};
+	}
 	var mnemonic = matches[1];
 	var operand = matches[2];
 	$scope.debug_log(mnemonic, "|||", operand);
@@ -317,6 +329,7 @@ app.controller("AvrSimController", function($scope){
 	}},
 	"string_ram":{"regex":/^ *\.string\(([a-zA-Z_][a-zA-Z0-9_]*)\) "((?:[^"\\]|\\.)*)" *$/,"process":function(args){
 	    var str = $scope.handle_string_escapes(args[2]);
+	    console.log("SS",str);
 	    var rdata = []
 	    for(var i = 0; i < str.length; i++){
 		rdata.push($scope.truncate(str.charCodeAt(i),8,false));
