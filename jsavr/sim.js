@@ -321,6 +321,7 @@ app.controller("AvrSimController", function($scope){
 	    for(var i = 0; i < str.length; i++){
 		rdata.push($scope.truncate(str.charCodeAt(i),8,false));
 	    }
+	    rdata.push(0);
 	    return {"symbol":args[1],
 		    "symbol_type":"ram",
 		    "ram_data":rdata
@@ -570,10 +571,11 @@ app.controller("AvrSimController", function($scope){
 	    $scope.debug_log("i",i);
 	    i.run();
 	    if($scope.PC < $scope.display_pm_start || $scope.PC >= $scope.display_pm_start + $scope.display_pm_length){
-		$scope.display_pm_start = $scope.PC;
+		$scope.display_pm_start = Math.max(0, $scope.PC - $scope.display_ram_length/2);
 	    }
-	    if($scope.ram_updated.length > 0)
-		$scope.display_ram_start = Math.min.apply(Math, $scope.ram_updated) - $scope.display_ram_length/2;
+	    if($scope.ram_updated.length > 0){
+		$scope.display_ram_start = Math.max(0, Math.min.apply(Math, $scope.ram_updated) - $scope.display_ram_length/2);
+	    }
 	}
     }
     $scope.raise_error = function(s){
