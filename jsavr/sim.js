@@ -340,6 +340,38 @@ app.controller("AvrSimController", function($scope){
 	    
 	}}
     };
+    // X,*:  111
+    // Y,"": 010
+    // Y,+-" 110
+    // Z,"": 000
+    // Z,+-: 100
+    // "":  00
+    // "+": 01
+    // "-": 10
+    $scope.encode_x = function(i){
+	var x = 0;
+	var ptr = i[0] == "-" ? i[1] : i[0];
+	var mod = i[0] == "-" ? "-" : (i[1] == "+" ? "+" : "");
+	if(ptr == "X") x = 7*4
+	if(ptr == "Y") x = 6*4
+	if(ptr == "Z") x = 4*4
+	if(ptr != "X" && mod == "") x -= 16;
+	if(mod == "+") x += 1;
+	if(mod == "-") x += 2;
+	return x;
+    }
+    $scope.decode_x = function(x){
+	var ptr = "";
+	var mod = "";
+	$scope.debug_log("XX",x,x&3,(x>>2)&3)
+	if(((x >> 2)&3) == 3) ptr = "X";
+	if(((x >> 2)&3) == 2) ptr = "Y";
+	if(((x >> 2)&3) == 0) ptr = "Z";
+	if((x&3) == 1) mod = "+";
+	if((x&3) == 2) mod = "-";
+	$scope.debug_log("X=",mod,ptr)
+	return mod == "-" ? mod +""+ ptr : ptr +""+ mod;
+    }
     $scope.formats = {
 	"4r8i":{
 	    "string":/ *r([0-9]+), *()(-?[a-zA-Z_0-9)(-]+|'..?') *$/,
@@ -369,13 +401,13 @@ app.controller("AvrSimController", function($scope){
 	    "validator":function(c, r, s, i){return 0 <= r && r < 32;}},
 	"5rX":{
 	    "string":/ *r([0-9]+)(), *(-[XYZ]|[XYZ]|[XYZ]\+) *$/,
-	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " r" + r + ","+i;},
-	    "binary":"CCCCCCCRRRRRCCCC",
+	    "to_string":function(mnemonic,c,r,s,i,x){return mnemonic + " r" + r + ","+i},
+	    "binary":"CCCXCCCRRRRRXXXX",
 	    "validator":function(c, r, s, i){return 0 <= r && r < 32;}},
 	"X5r":{
 	    "string":/ *(-[XYZ]|[XYZ]|[XYZ]\+), *r([0-9]+)() *$/,
-	    "to_string":function(mnemonic,c,r,s,i){return mnemonic + " " + r + ",r"+s;},
-	    "binary":"CCCCCCCRRRRRCCCC",
+	    "to_string":function(mnemonic,c,r,s,i,x){return mnemonic + " " + r + ",r"+s;},
+	    "binary":"CCCXCCCRRRRRXXXX",
 	    "validator":function(c, r, s, i){return 0 <= s && s < 32;}},
 	"12i":{
 	    "string":/ *()()(-?[a-zA-Z_0-9)(]+) *$/,
@@ -398,6 +430,21 @@ app.controller("AvrSimController", function($scope){
     $scope.encode = function(format, c, r, s, i){
 	var fmt = $scope.formats[format].binary;
 	var inst = 0;
+	var x = 0;
+	if(format == "5r6s"){
+	    i = s;
+	    s = r;
+	    r = i;
+	}
+	else if(format == "5rX" || format == "X5r"){
+	    if(format == "X5r"){
+		i = r;
+		r = s;
+	    }
+	    $scope.debug_log("Xe",i);
+	    x = $scope.encode_x(i);
+	    $scope.debug_log("Xd",x);
+	}
 	for(var j = 15; j >= 0; j--) {
 	    if(fmt[j] == "C"){
 		inst += (c%2)<<(15-j);
@@ -415,23 +462,30 @@ app.controller("AvrSimController", function($scope){
 		inst += (i%2)<<(15-j);
 		i >>= 1;
 	    }
+	    if(fmt[j] == "X"){
+		inst += (x%2)<<(15-j);
+		x >>= 1;
+	    }
 	}
 	return inst;
     }
     $scope.decode = function(x,addr){
 	for(var f in $scope.formats){
 	    fmt = $scope.formats[f];
-	    var data = {"c":0,"r":0,"s":0,"i":0}
+	    var data = {"c":0,"r":0,"s":0,"i":0,"x":0}
 	    for(var j = 15; j >= 0; j--){
 		//$scope.debug_log("J",j,fmt.binary[15-j],(x>>j)%2);
 		if(fmt.binary[15-j] == "C") data.c = (data.c * 2) + ((x >> j) % 2);
 		if(fmt.binary[15-j] == "R") data.r = (data.r * 2) + ((x >> j) % 2);
 		if(fmt.binary[15-j] == "S") data.s = (data.s * 2) + ((x >> j) % 2);
 		if(fmt.binary[15-j] == "I") data.i = (data.i * 2) + ((x >> j) % 2);
+		if(fmt.binary[15-j] == "X") data.x = (data.x * 2) + ((x >> j) % 2);
 	    }
 	    if(f == "4r8i") data.r += 16;
 	    if(f == "12i") data.i = $scope.truncate(data.i,12,true);
 	    if(f == "7i") data.i = $scope.truncate(data.i,7,true);
+	    if(f == "5rX") data.i = $scope.decode_x(data.x);
+	    if(f == "X5r") data.r = $scope.decode_x(data.x);
 	    for(var mnemonic in $scope.instructions){
 		inst = $scope.instructions[mnemonic];
 		if(inst.format == f && inst.c == data.c){
@@ -766,7 +820,7 @@ app.controller("AvrSimController", function($scope){
 	    $scope.PC++;
 	    $scope.ram_updated = [];
 	    $scope.updated = [r,"PC"];}},
-	"ld":{"format":"5rX", "c": 1164, "exec":function(c, r, s, i){
+	"ld":{"format":"5rX", "c": 32, "exec":function(c, r, s, i){
 	    var reg = 0;
 	    if(i == "X" || i == "-X" || i == "X+") reg = 26;
 	    if(i == "Y" || i == "-Y" || i == "Y+") reg = 28;
@@ -784,7 +838,7 @@ app.controller("AvrSimController", function($scope){
 	    }
 	    $scope.ram_updated = [];
 	    $scope.PC++;}},
-	"st":{"format":"X5r", "c": 1180, "exec":function(c, r, s, i){
+	"st":{"format":"X5r", "c": 33, "exec":function(c, r, s, i){
 	    i = r;
 	    r = s;
 	    var reg = 0;
