@@ -715,7 +715,7 @@ app.controller("AvrSimController", function($scope){
     }
     $scope.instructions = {
 	"ldi":{"format":"4r8i", "c": 14, "exec":function(c, r, s, i){
-	    $scope.RF[r] = i;
+	    $scope.RF[r] = $scope.truncate(i,8,false);
 	    $scope.PC++;
 	    $scope.ram_updated = [];
 	    $scope.updated = [r,"PC"];}},
@@ -831,7 +831,7 @@ app.controller("AvrSimController", function($scope){
 	    }
 	    var ptr = $scope.truncate($scope.RF[reg],8,false)+256*$scope.truncate($scope.RF[reg+1],8,false);
 	    $scope.updated = [r,"PC"];
-	    $scope.RF[r] = $scope.RAM[ptr];
+	    $scope.RF[r] = $scope.truncate($scope.RAM[ptr],8,false);
 	    if(i[1] == "+"){
 		$scope.updated.push(reg);
 		$scope.inc_ptr(reg);
@@ -880,7 +880,7 @@ app.controller("AvrSimController", function($scope){
 	    $scope.ram_updated = [];
 	    $scope.updated = ["PC"];}},
 	"in":{"format":"6s5r", "c": 22, "exec":function(c, r, s, i){
-	    $scope.RF[r] = $scope.read_IO(s);
+	    $scope.RF[r] = $scope.truncate($scope.read_IO(s),8,false);
 	    $scope.PC++;
 	    $scope.ram_updated = [];
 	    $scope.updated = [r,"PC"];}},
@@ -910,7 +910,7 @@ app.controller("AvrSimController", function($scope){
 	"pop":{"format":"5r", "c": 1167, "exec":function(c, r, s, i){
 	    $scope.incSP();
 	    var SP = $scope.SPH * 256 + $scope.SPL;
-	    $scope.RF[r] = $scope.RAM[SP];
+	    $scope.RF[r] = $scope.truncate($scope.RAM[SP],8,false);
 	    $scope.PC++;
 	    $scope.ram_updated = [];
 	    $scope.updated = ["PC","SPH","SPL"];}},
