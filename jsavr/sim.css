@@ -210,3 +210,24 @@
 .simavr_io_switch_off{
     background-color:#f33;
 }
+
+.simavr_lcd_table{
+    border:1px solid black;
+}
+
+.simavr_lcd_cell{
+    border:1px solid black;
+    color:#eee;
+    font-family:monospace;
+    min-width:1em;
+    text-align:center;
+    height:2em;
+    padding:0;
+    margin:0;
+}
+.simavr_lcd_cell_cursor{
+    background-color:#336;
+}
+.simavr_lcd_cell_normal{
+    background-color:#363;
+}

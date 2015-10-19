@@ -15,7 +15,7 @@
 	<select name="output_select" ng-model="output_type.selection">
 	  <option value="program">View Program</option>
 	  <option value="simple">View Simple I/O</option>
-	  <!-- <option value="complex">View Complex I/O</option> -->
+	  <option value="complex">View Complex I/O</option>
 	</select>
       </div>
     </div>
@@ -41,7 +41,11 @@
       </div>
     </div>
     <div class="simavr_output" ng-if="output_type.selection == 'complex'">
-      Paceholder for full output panel
+      <p><b>Character display</b>:
+	<table class="simavr_lcd_table" cellspacing="0" cellpadding="0">
+	  <tr ng-repeat="line in lcd.chars track by $index">
+	    <td ng-class="'simavr_lcd_cell '+(lcd.cursor_x == $index && lcd.cursor_y == $parent.$index ? 'simavr_lcd_cell_cursor' : 'simavr_lcd_cell_normal')" ng-repeat="c in line track by $index">{{c}}</td></tr></table>
+      </p>
     </div>
   </div>
   <div class="simavr_simulator" ng-if="running">

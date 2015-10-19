@@ -86,7 +86,11 @@ app.controller("AvrSimController", function($scope){
 	$scope.updated = [];
 	$scope.ram_updated = [];
 	$scope.outputs = [];
+	$scope.output_state = "READY";
 	$scope.mux = new $scope.output_mux();
+	$scope.lcd = new $scope.char_display();
+	$scope.output_devs = [];
+	$scope.output_devs.push($scope.lcd);
 	for(var i = 0; i < $scope.RF_size; i++) $scope.RF[i] = 0;
 	for(var i = 0; i < $scope.RAM_size; i++) $scope.RAM[i] = 0;
 	for(var i = 0; i < $scope.IORF_size; i++) $scope.IORF[i] = 0;
@@ -509,35 +513,86 @@ app.controller("AvrSimController", function($scope){
     }
     $scope.output_mux = function(){
 	this.SEL_ADDR = 0;
-	this.SEL_LEN = 255;
-	this.LCD_OUT = 1;
-	this.LB_OUT = 2;
+	this.SEL_LEN = 1;
+	this.SEL_TARGET = 2;
+	
 	this.target = 0;
 	this.len = 0;
 	this.state = 0;
+	var self = this;
 	this.input = function(val){
-	    if(this.state == this.SEL_ADDR) {
-		this.target = val;
-		this.state = this.SEL_LEN;
+	    $scope.debug_log("MUX",val,self.state,self.target,self.len);
+	    if(self.state == self.SEL_ADDR) {
+		self.target = val;
+		self.state = self.SEL_LEN;
 	    }
-	    else if(this.state == this.SEL_LEN){
-		this.len = val;
-		this.state = this.target;
-		this.target = 0;
+	    else if(self.state == self.SEL_LEN){
+		self.len = val;
+		self.state = self.target;
+		self.target = 0;
+		self.state = self.SEL_TARGET;
 	    }
-	    else if(this.len > 0){
-		if(this.state-1 < $scope.output_devs.length)
-		    $scope.output_devs.input(val);
-		this.len--;
+	    else if(self.state == self.SEL_TARGET){
+		if(self.len > 0){
+		    if(self.target < $scope.output_devs.length)
+			$scope.output_devs[self.target].input(val);
+		    self.len--;
+		}
+		if(self.len == 0){
+		    self.state = self.SEL_ADDR;
+		}
 	    }
-	    else{
-		this.state = this.SEL_ADDR;
-	    }
+	    $scope.debug_log("MUX_end",val,self.state,self.target,self.len);
 	}
     }
-    $scope.lcd = function(){
+    $scope.char_display = function(){
+	this.cursor_x = 0;
+	this.cursor_y = 0;
+	this.chars = [["","","","","","","","","","","","","","","",""],["","","","","","","","","","","","","","","",""],["","","","","","","","","","","","","","","",""],["","","","","","","","","","","","","","","",""]];
+	this.state = "BASE";
+	var self = this;
 	this.input = function(val){
-	    
+	    console.log("CHAR",val);
+	    if(self.state == "BASE"){
+		if(val != 0x1b){
+		    self.chars[self.cursor_y][self.cursor_x] = String.fromCharCode(val);
+		}
+		else{
+		    self.state = "ESC";
+		}
+	    }
+	    else if(self.state == "ESC"){
+		if(val == 67){
+		    self.cursor_x++;
+		    if(self.cursor_x == 16){
+			self.cursor_x = 0;
+			self.cursor_y++;
+			if(self.cursor_y == 4) self.cursor_y = 0;
+		    }
+		    self.state = "BASE";
+		}
+		else if(val == 68){
+		    self.cursor_x--;
+		    if(self.cursor_x == -1){
+			self.cursor_x = 15;
+			self.cursor_y--;
+			if(self.cursor_y == -1) self.cursor_y = 3;
+		    }
+		    self.state = "BASE";
+		}
+		else if(val == 72){
+		    self.state = "CURSORX";
+		}
+		else self.state = "BASE";
+	    }
+	    else if(self.state == "CURSORX"){
+		self.cursor_x = $scope.truncate(val,4,false);
+		self.state = "CURSORY"
+	    }
+	    else if(self.state == "CURSORY"){
+		self.cursor_y = $scope.truncate(val,2,false);
+		self.state = "BASE";
+	    }
 	}
     }
     $scope.set_PM_display_mode = function(m){
@@ -648,6 +703,20 @@ app.controller("AvrSimController", function($scope){
 	    if($scope.ram_updated.length > 0){
 		$scope.display_ram_start = Math.max(0, Math.min.apply(Math, $scope.ram_updated) - $scope.display_ram_length/2);
 	    }
+	    $scope.handle_output();
+	}
+    }
+    $scope.handle_output = function(){
+	var d = $scope.truncate($scope.PORTD,8,false);
+	var val = d & 127;
+	var state = d >> 7;
+	$scope.debug_log("oUT",val,state,$scope.output_state);
+	if($scope.output_state == "RESET" && state == 0){
+	    $scope.output_state = "READY";
+	}
+	else if($scope.output_state == "READY" && state == 1){
+	    $scope.output_state = "RESET";
+	    $scope.mux.input(val);
 	}
     }
     $scope.raise_error = function(s){
