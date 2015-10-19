@@ -1,5 +1,6 @@
 "use strict"
 var benv = require('benv');
+var tests = require('tests/tests.js');
 benv.setup(function(){
     benv.expose({angular:benv.require('./lib/angular/angular.js','angular')});
     var app = angular.module('app', [])

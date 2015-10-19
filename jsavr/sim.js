@@ -178,7 +178,6 @@ app.controller("AvrSimController", function($scope){
 	var pm_offset = 0;
 	var ram_offset = 1024;
 	for(var i = 0; i < lines.length; i++){
-	    console.log("LL",lines[i])
 	    var pieces = lines[i].match(/^((?:[^";]|';'|"(?:[^\\"]+|\\(?:\\\\)*[nt\\"])*")*)(;.*)?$/)
 	    $scope.debug_log("P",pieces);
 	    if(!pieces){
@@ -294,6 +293,7 @@ app.controller("AvrSimController", function($scope){
 	return false;
     }
     $scope.handle_string_escapes = function(s){
+	s = s.replace(/(([^\\]|)(\\\\)*)\\t/g,"$1\t");
 	s = s.replace(/(([^\\]|)(\\\\)*)\\n/g,"$1\n");
 	s = s.replace(/(([^\\]|)(\\\\)*)\\"/g,"$1\"");
 	s = s.replace(/\\\\/g,"\\");
@@ -327,7 +327,6 @@ app.controller("AvrSimController", function($scope){
 	}},
 	"string_ram":{"regex":/^ *\.string\(([a-zA-Z_][a-zA-Z0-9_]*)\) "((?:[^"\\]|\\.)*)" *$/,"process":function(args){
 	    var str = $scope.handle_string_escapes(args[2]);
-	    console.log("SS",str);
 	    var rdata = []
 	    for(var i = 0; i < str.length; i++){
 		rdata.push($scope.truncate(str.charCodeAt(i),8,false));
@@ -485,7 +484,15 @@ app.controller("AvrSimController", function($scope){
 	    if(f == "12i") data.i = $scope.truncate(data.i,12,true);
 	    if(f == "7i") data.i = $scope.truncate(data.i,7,true);
 	    if(f == "5rX") data.i = $scope.decode_x(data.x);
-	    if(f == "X5r") data.r = $scope.decode_x(data.x);
+	    if(f == "X5r"){
+		data.s = data.r;
+		data.r = $scope.decode_x(data.x);
+	    }
+	    if(f == "5r6s"){
+		var temp = data.r;
+		data.r = data.s;
+		data.s = temp;
+	    }
 	    for(var mnemonic in $scope.instructions){
 		inst = $scope.instructions[mnemonic];
 		if(inst.format == f && inst.c == data.c){
@@ -673,7 +680,6 @@ app.controller("AvrSimController", function($scope){
 	else if(s == 61) $scope.SPL = $scope.truncate(val,8,false);
 	else if(s == 62) $scope.SPH = $scope.truncate(val,8,false);
 	if($scope.output_type.selection == "simple"){
-	    console.log("simple");
 	    $scope.PIND = 0;
 	    for(var i = 0; i < 8; i++)
 		$scope.PIND |= ($scope.io_state.switch_state[i] == "ON" ? 1 << i : 0)
