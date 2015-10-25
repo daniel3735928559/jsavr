@@ -319,10 +319,10 @@ app.controller("AvrSimController", function($scope){
 		    "pm_data":rdata
 		   };
 	}},
-	"byte_ram":{"regex":/^ *\.byte\(([a-zA-Z_][a-zA-Z0-9_]*)\) ([-0-9,]+) *$/,"process":function(args){
+	"byte_ram":{"regex":/^ *\.byte\(([a-zA-Z_][a-zA-Z0-9_]*)\) ([-0-9, ]+) *$/,"process":function(args){
 	    var rdata = args[2].split(",");
 	    for(var i = 0; i < rdata.length; i++){
-		rdata[i] = $scope.truncate(parseInt(rdata[i]),8,false);
+		rdata[i] = $scope.truncate(parseInt(rdata[i].trim()),8,false);
 	    }
 	    return {"symbol":args[1],
 		    "symbol_type":"ram",
