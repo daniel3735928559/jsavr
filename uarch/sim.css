@@ -1,6 +1,6 @@
 .simavr{
     display:inline-block;
-    width:73em;
+    width:90em;
     /* min-height:40em; */
     font-size:10pt;
 }
@@ -130,6 +130,16 @@
     display:inline-block;
     padding:5px;
     width:90%;
+    border:1px solid #aaa;
+    overflow-x:scroll;
+    overflow-y:scroll;
+}
+
+.simavr_trace{
+    display:inline-block;
+    padding:5px;
+    width:90%;
+    height:100%;
     border:1px solid #aaa;
     overflow-x:scroll;
     overflow-y:scroll;

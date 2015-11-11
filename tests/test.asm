@@ -1,0 +1,14 @@
+ldi r30,56
+ldi r31,244
+add r30,r31
+sub r31,r30
+cp r30,r31
+rjmp 1
+ldi r18,99
+subi r30,1
+cpi r30,43
+breq -3
+ldi r26,44
+ldi r27,1
+st X,r30
+ld r0,X

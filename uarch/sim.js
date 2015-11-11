@@ -63,7 +63,7 @@ app.controller("AvrSimController", function($scope){
 		    "add":"00010",
 		    "sub":"00010",
 		    "cp":"00010",
-		    "nop":"00000",
+		    "nop":"10011",
 		}[inst.mnemonic];
 	    }
 	},
@@ -76,8 +76,8 @@ app.controller("AvrSimController", function($scope){
 	    "next":function(inst){
 		return {
 		    "ldi":"00101",
-		    "subi":"00101",
-		    "cpi":"00101"
+		    "subi":"00111",
+		    "cpi":"00111"
 		}[inst.mnemonic];
 	    }
 	},
@@ -98,19 +98,19 @@ app.controller("AvrSimController", function($scope){
 	    }
 	},
 	"00011":{
-	    "name":"OFF = 00000,INST[9:3]",
+	    "name":"OFF = Z?SEXT16(INST[9:3]):0",
 	    "exec":function(inst){
 		return {"controls":$scope.set_controls({"OFF_we":1,"OFF_sel":1}),
-			"uarch":$scope.set_uarch("OFF",$scope.extract_bits(inst.encoding,9,3))};
+			"uarch":$scope.set_uarch("OFF",$scope.Z == 1 ? $scope.truncate($scope.extract_bits(inst.encoding,9,3),7,true) : 0)};
 	    },
 	    "next":function(inst){
 		return {
-		    "breq":"01111"
+		    "breq":"01110"
 		}[inst.mnemonic];
 	    }
 	},
 	"00100":{
-	    "name":"OFF = INST[11:0]",
+	    "name":"OFF = SEXT16(INST[11:0])",
 	    "exec":function(inst){
 		return {"controls":$scope.set_controls({"OFF_we":1,"OFF_sel":0}),
 			"uarch":$scope.set_uarch("OFF",$scope.extract_bits(inst.encoding,11,0))};
@@ -157,14 +157,16 @@ app.controller("AvrSimController", function($scope){
 		return {
 		    "add":"01010",
 		    "sub":"01010",
-		    "cp":"01010"
+		    "cp":"01010",
+		    "subi":"01111",
+		    "cpi":"01111"
 		}[inst.mnemonic];
 	    }
 	},
 	"01000":{
 	    "name":"VAL2 = RF[REG2]",
 	    "exec":function(inst){
-		return {"controls":$scope.set_controls({"VAL2_we":1}),
+		return {"controls":$scope.set_controls({"VAL2_we":1,"VAL2_sel":0}),
 			"uarch":$scope.set_uarch("VAL2",$scope.RF[$scope.uarch_regs["REG2"]])};
 	    },
 	    "next":function(inst){
@@ -184,7 +186,7 @@ app.controller("AvrSimController", function($scope){
 	    "next":function(inst){
 		return {
 		    "ld":"10000",
-		    "st":"00111",
+		    "st":"00110",
 		}[inst.mnemonic];
 	    }
 	},
@@ -249,13 +251,13 @@ app.controller("AvrSimController", function($scope){
 	    }
 	},
 	"01111":{
-	    "name":"OFF = OFF&ZZZZZZZ",
+	    "name":"VAL2 = INST[11:8],INST[3:0]",
 	    "exec":function(inst){
-		return {"controls":$scope.set_controls({"OFF_we":1,"VAL_sel":1}),
-			"uarch":$scope.set_uarch("OFF",$scope.uarch_regs["OFF"]+$scope.PC)};
+		return {"controls":$scope.set_controls({"VAL2_we":1,"VAL2_sel":1}),
+			"uarch":$scope.set_uarch("VAL2",16*$scope.extract_bits(inst.encoding,11,8)+$scope.extract_bits(inst.encoding,3,0))};
 	    },
 	    "next":function(inst){
-		return "01110";
+		return "01100";
 	    }
 	},
 	"10000":{
@@ -271,8 +273,10 @@ app.controller("AvrSimController", function($scope){
 	"10001":{
 	    "name":"RAM[ADDR] = VAL",
 	    "exec":function(inst){
+		$scope.RAM[$scope.uarch_regs["ADDR"]] = $scope.uarch_regs["VAL"];
 		return {"controls":$scope.set_controls({"RAM_we":1}),
-			"uarch":["None"]};
+			"uarch":["None"],
+			"arch":["RAM[" + $scope.uarch_regs["ADDR"] + "] = " + $scope.uarch_regs["VAL"]]};
 	    },
 	    "next":function(inst){
 		return "10011";
@@ -281,8 +285,10 @@ app.controller("AvrSimController", function($scope){
 	"10010":{
 	    "name":"RF[REG] = VAL",
 	    "exec":function(inst){
+		//$scope.RF[$scope.uarch_regs["REG"]] = $scope.uarch_regs["VAL"]
 		return {"controls":$scope.set_controls({"RF_we":1}),
-			"uarch":["None"]};
+			"uarch":["None"],
+			"arch":["RF["+$scope.uarch_regs["REG"]+"] = " + $scope.uarch_regs["VAL"]]};
 	    },
 	    "next":function(inst){
 		return "10011";
@@ -389,8 +395,9 @@ app.controller("AvrSimController", function($scope){
     
     $scope.reset = function(pm_reset){
 	$scope.uarch_cycle = 0;
+	$scope.uarch_trace = "";
 	$scope.io_state.switch_state = ["OFF","OFF","OFF","OFF","OFF","OFF","OFF","OFF"];
-	$scope.output_type.selection = "program";
+	$scope.output_type.selection = "uarch";
 	$scope.display_pm_start = 0;
 	$scope.display_ram_start = 0;
 	$scope.steps = {'count':1};
@@ -925,13 +932,34 @@ app.controller("AvrSimController", function($scope){
 	var trace = $scope.state_machine[$scope.current_uarch_state].exec(inst);
 	$scope.current_uarch_state = $scope.state_machine[$scope.current_uarch_state].next(inst);
 	console.log("AUS2",trace,$scope.current_uarch_state);
-	var answer = "  Controls: \n";
+	if(!($scope.current_uarch_state)){
+	    alert("unsupported instruction");
+	    return "Unsupported instruction";
+	}
+	var answer = "  Control signals: \n";
 	for(var i = 0; i < trace.controls.length; i++)
 	    answer += "    " + trace.controls[i] + "\n";
-	answer += "  Registers: \n";
+	answer += "  Aux registers: \n";
 	for(var i = 0; i < trace.uarch.length; i++)
 	    answer += "    " + trace.uarch[i] + "\n";
 	return answer;
+    }
+    $scope.cycle = function(){
+	if(!$scope.running) return;
+	var i = $scope.PM[$scope.PC];
+	var trace = "Cycle: " + ($scope.uarch_cycle++) + "\n";
+	trace += "  State: " + $scope.current_uarch_state + " (" + $scope.state_machine[$scope.current_uarch_state].name + ")\n";
+	trace += $scope.advance_uarch_state(i);
+	$scope.uarch_trace = trace + $scope.uarch_trace;
+	if($scope.current_uarch_state == "00000"){
+	    i.run();
+	}
+	if($scope.PC < $scope.display_pm_start || $scope.PC >= $scope.display_pm_start + $scope.display_pm_length){
+	    $scope.display_pm_start = Math.max(0, $scope.PC - $scope.display_ram_length/2);
+	}
+	if($scope.ram_updated.length > 0){
+	    $scope.display_ram_start = Math.max(0, Math.min.apply(Math, $scope.ram_updated) - $scope.display_ram_length/2);
+	}
     }
     $scope.step = function(){
 	if(!$scope.running) return;
@@ -939,13 +967,15 @@ app.controller("AvrSimController", function($scope){
 	for(var k = 0; k < $scope.steps.count; k++){
 	    var i = $scope.PM[$scope.PC];
 	    $scope.debug_log("i",i);
-	    $scope.uarch_trace += "Cycle: " + ($scope.uarch_cycle++) + "\n";
-	    $scope.uarch_trace += "  State: " + $scope.current_uarch_state + "\n";
-	    $scope.uarch_trace += $scope.advance_uarch_state(i);
+	    var trace = "Cycle: " + ($scope.uarch_cycle++) + "\n";
+	    trace += "  State: " + $scope.current_uarch_state + " (" + $scope.state_machine[$scope.current_uarch_state].name + ")\n";
+	    trace += $scope.advance_uarch_state(i);
+	    $scope.uarch_trace = trace + $scope.uarch_trace;
 	    while($scope.current_uarch_state != "00000"){
-		$scope.uarch_trace += "Cycle: " + ($scope.uarch_cycle++) + "\n";
-		$scope.uarch_trace += "  State: " + $scope.current_uarch_state + "\n";
-		$scope.uarch_trace += $scope.advance_uarch_state(i);
+		trace = "Cycle: " + ($scope.uarch_cycle++) + "\n";
+		trace += "  State: " + $scope.current_uarch_state + " (" + $scope.state_machine[$scope.current_uarch_state].name + ")\n";
+		trace += $scope.advance_uarch_state(i);
+		$scope.uarch_trace = trace + $scope.uarch_trace;
 	    }
 	    i.run();
 	    if($scope.PC < $scope.display_pm_start || $scope.PC >= $scope.display_pm_start + $scope.display_pm_length){
