@@ -15,13 +15,17 @@
 	<select name="output_select" ng-model="output_type.selection">
 	  <option value="program">View Program</option>
 	  <option value="simple">View Simple I/O</option>
-	  <option value="complex">View Complex I/O</option>
+	  <option value="uarch">View uarch trace</option>
 	</select>
       </div>
     </div>
     <div class="simavr_output" ng-if="output_type.selection == 'program'">
       <b>Program: </b>
       <pre>{{program}}</pre>
+    </div>
+    <div class="simavr_output" ng-if="output_type.selection == 'uarch'">
+      <b>Microarchitecture Trace: </b>
+      <pre>{{uarch_trace}}</pre>
     </div>
     <div class="simavr_output" ng-if="output_type.selection == 'simple'">
       Output LCD: <br />(Connected to pins 0-7 of D)<br />

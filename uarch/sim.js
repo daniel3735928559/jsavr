@@ -9,6 +9,8 @@ app.controller("AvrSimController", function($scope){
     $scope.io_state = {'switch_state':["OFF","OFF","OFF","OFF","OFF","OFF","OFF","OFF"]};
     $scope.steps = {'count':1};
     $scope.output_type = {"selection":"program"};
+    $scope.uarch_cycle = 0;
+    $scope.uarch_trace = "";
     $scope.uarch_regs = {
 	"INST":0,
 	"VAL":0,
@@ -259,8 +261,8 @@ app.controller("AvrSimController", function($scope){
 	"10000":{
 	    "name":"VAL = RAM[ADDR]",
 	    "exec":function(inst){
-		var val = inst.encoding;
-		return {"controls":$scope.set_controls("INST_WE",1),"uarch":$scope.set_uarch("INST",inst.encoding)};
+		return {"controls":$scope.set_controls({"VAL_we":1,"VAL_sel":0}),
+			"uarch":$scope.set_uarch("VAL",$scope.RAM[$scope.uarch_regs["ADDR"]])};
 	    },
 	    "next":function(inst){
 		return "10010";
@@ -269,9 +271,8 @@ app.controller("AvrSimController", function($scope){
 	"10001":{
 	    "name":"RAM[ADDR] = VAL",
 	    "exec":function(inst){
-		var val = inst.encoding;
-		return {"controls":$scope.set_controls("INST_WE",1),
-			"uarch":$scope.set_uarch("INST",inst.encoding)};
+		return {"controls":$scope.set_controls({"RAM_we":1}),
+			"uarch":["None"]};
 	    },
 	    "next":function(inst){
 		return "10011";
@@ -280,9 +281,8 @@ app.controller("AvrSimController", function($scope){
 	"10010":{
 	    "name":"RF[REG] = VAL",
 	    "exec":function(inst){
-		var val = inst.encoding;
-		return {"controls":$scope.set_controls("INST_WE",1),
-			"uarch":$scope.set_uarch("INST",inst.encoding)};
+		return {"controls":$scope.set_controls({"RF_we":1}),
+			"uarch":["None"]};
 	    },
 	    "next":function(inst){
 		return "10011";
@@ -291,9 +291,8 @@ app.controller("AvrSimController", function($scope){
 	"10011":{
 	    "name":"PC = PC+1",
 	    "exec":function(inst){
-		var val = inst.encoding;
-		return {"controls":$scope.set_controls("INST_WE",1),
-			"uarch":$scope.set_uarch("INST",inst.encoding)};
+		return {"controls":$scope.set_controls({"PC_we":1,"PC_sel":0}),
+			"uarch":["None"]};
 	    },
 	    "next":function(inst){
 		return "00000";
@@ -302,9 +301,8 @@ app.controller("AvrSimController", function($scope){
 	"10100":{
 	    "name":"PC = VAL",
 	    "exec":function(inst){
-		var val = inst.encoding;
-		return {"controls":$scope.set_controls("INST_WE",1),
-			"uarch":$scope.set_uarch("INST",inst.encoding)};
+		return {"controls":$scope.set_controls({"PC_we":1,"PC_sel":1}),
+			"uarch":["None"]};
 	    },
 	    "next":function(inst){
 		return "10011";
@@ -328,7 +326,7 @@ app.controller("AvrSimController", function($scope){
 	return [name + " = " + val];
     }
     $scope.extract_bits = function(n,top,bottom){
-	return (n >> bottom) % (1<<(top+1));
+	return (n >> bottom) % (1<<(top-bottom+1));
     }
     $scope.cm_setup = function(){
 	var sim_textarea = document.getElementById("simavr"+$scope.simid+"_program_area");
@@ -390,6 +388,7 @@ app.controller("AvrSimController", function($scope){
     }
     
     $scope.reset = function(pm_reset){
+	$scope.uarch_cycle = 0;
 	$scope.io_state.switch_state = ["OFF","OFF","OFF","OFF","OFF","OFF","OFF","OFF"];
 	$scope.output_type.selection = "program";
 	$scope.display_pm_start = 0;
@@ -926,7 +925,13 @@ app.controller("AvrSimController", function($scope){
 	var trace = $scope.state_machine[$scope.current_uarch_state].exec(inst);
 	$scope.current_uarch_state = $scope.state_machine[$scope.current_uarch_state].next(inst);
 	console.log("AUS2",trace,$scope.current_uarch_state);
-	return trace;
+	var answer = "  Controls: \n";
+	for(var i = 0; i < trace.controls.length; i++)
+	    answer += "    " + trace.controls[i] + "\n";
+	answer += "  Registers: \n";
+	for(var i = 0; i < trace.uarch.length; i++)
+	    answer += "    " + trace.uarch[i] + "\n";
+	return answer;
     }
     $scope.step = function(){
 	if(!$scope.running) return;
@@ -934,12 +939,14 @@ app.controller("AvrSimController", function($scope){
 	for(var k = 0; k < $scope.steps.count; k++){
 	    var i = $scope.PM[$scope.PC];
 	    $scope.debug_log("i",i);
-	    var uarch_trace = [];
-	    uarch_trace.push($scope.advance_uarch_state(i));
+	    $scope.uarch_trace += "Cycle: " + ($scope.uarch_cycle++) + "\n";
+	    $scope.uarch_trace += "  State: " + $scope.current_uarch_state + "\n";
+	    $scope.uarch_trace += $scope.advance_uarch_state(i);
 	    while($scope.current_uarch_state != "00000"){
-		uarch_trace.push($scope.advance_uarch_state(i));
+		$scope.uarch_trace += "Cycle: " + ($scope.uarch_cycle++) + "\n";
+		$scope.uarch_trace += "  State: " + $scope.current_uarch_state + "\n";
+		$scope.uarch_trace += $scope.advance_uarch_state(i);
 	    }
-	    console.log(uarch_trace);
 	    i.run();
 	    if($scope.PC < $scope.display_pm_start || $scope.PC >= $scope.display_pm_start + $scope.display_pm_length){
 		$scope.display_pm_start = Math.max(0, $scope.PC - $scope.display_ram_length/2);
