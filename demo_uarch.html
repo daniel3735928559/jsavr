@@ -1,0 +1,20 @@
+<html>
+  <head>
+    <title>JS-AVR demo</title>
+    <link rel="stylesheet" type="text/css" href="uarch/sim.css" />
+    <link rel="stylesheet" href="lib/codemirror/codemirror.css" />
+    <link rel="stylesheet" href="lib/codemirror/theme/paraiso-light.css" />
+    <script type="text/javascript" src="lib/angular/angular.min.js"></script>
+    <script type="text/javascript" src="lib/codemirror/codemirror.js"></script>
+    <script type="text/javascript" src="demo_uarch.js"></script>
+    <script type="text/javascript" src="uarch/sim.js"></script>
+  </head>
+  <body ng-app="app">
+    <div ng-controller="DemoController">
+      <a href="#" ng-click="avrcontrol.set_program('nop')">Reset the program</a>
+      Current program: {{prog}}
+      <sim-avr program="prog" control="avrcontrol" size="" lightboard="yes" reset="yes" simid="1" template="jsavr/simavr.html" debug="yes"></sim-avr>
+    </div>
+  </body>
+</html>
+

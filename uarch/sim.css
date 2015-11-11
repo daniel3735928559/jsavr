@@ -1,0 +1,233 @@
+.simavr{
+    display:inline-block;
+    width:73em;
+    /* min-height:40em; */
+    font-size:10pt;
+}
+#simavr_rf{
+    float:left;
+    width:16em;
+    border:1px solid #aaa;
+    text-align:center;
+}
+
+#simavr_pm{
+    float:left;
+    width:13em;
+    border:1px solid #aaa;
+    text-align:center;
+}
+
+#simavr_ram{
+    float:left;
+    width:10em;
+    border:1px solid #aaa;
+    text-align:center;
+}
+
+#simavr_other{
+    float:left;
+    width:10em;
+    border:1px solid #aaa;
+    text-align:center;
+}
+
+.simavr_title{
+    width:100%;
+    text-align:center;
+    display:inline-block;
+    font-size:12pt;
+    margin:auto;
+    padding-bottom:5px;
+    line-height:2.5em;
+}
+
+.simavr_status{
+    display:inline-block;
+    padding:5px;
+    border-left:1px solid #aaa;
+    /* border-radius:5px; */
+    margin:5px;
+    width:45%;
+    font-size:9pt;
+    float:right;    
+}
+
+.active_line{
+    background-color:#f66;
+}
+.simavr_label{
+    font-size:10pt;
+    color:#333;
+    display:inline-block;
+    width:2em;
+}
+.simavr_label_long{
+    font-size:10pt;
+    color:#333;
+    display:inline-block;
+    margin-right:0.5ex;
+    min-width:2em;
+}
+
+.simavr_reg{
+    text-align:left;
+    display:inline-block;
+    padding:4px;
+    /*margin:0 2px 2px 0;*/
+    width:7em;
+}
+.simavr_pm{
+    text-align:left;
+    display:inline-block;
+    padding:4px;
+    /*margin:0 2px 2px 0;*/
+    width:12em;
+}
+
+.simavr_mem_start{
+    padding:4px;
+    width:4em;
+    margin:4px;
+}
+
+.simavr_ram{
+    text-align:left;
+    display:inline-block;
+    padding:4px;
+    /*margin:0 2px 2px 0;*/
+    width:7em;
+}
+
+.simavr_controls{
+    display:inline-block;
+    width:90%;
+    height:50px;
+    border: 2px solid #ccc;
+    margin:auto;
+    margin-bottom:5px;
+}
+
+.simavr_programming{
+    display:inline-block;
+    float:left;
+    width:70%;
+}
+
+.simavr_output_container{
+    display:inline-block;
+    float:left;
+    width:25%;
+}
+
+.simavr_simulator{
+    display:inline-block;
+    float:left;
+    width:75%;
+}
+
+.simavr_output{
+    display:inline-block;
+    padding:5px;
+    width:90%;
+    border:1px solid #aaa;
+    overflow-x:scroll;
+    overflow-y:scroll;
+}
+
+.simavr_program{
+    width:90%;
+}
+
+.simavr_normal{
+    background-color:#c66;
+}
+
+.simavr_updated{
+    background-color:#6c6;
+}
+
+.simavr_active{
+    background-color:#cc6;
+}
+
+.simavr_display_button{
+    display:inline-block;
+    padding:2px;
+}
+
+.simavr_enabled_button{
+    background-color:#66a;
+}
+
+.simavr_disabled_button{
+    background-color:#aaa;
+}
+
+.simavr_display_button:hover{
+    display:inline-block;
+    cursor:pointer;
+    color:#f33;
+}
+.simavr_button{
+    display:inline-block;
+    padding:8px;
+    border-radius:5px;
+    height:25px;
+    color:white;
+    margin:5px;
+    cursor:pointer;
+}
+
+.simavr_button:hover{
+    display:inline-block;
+    cursor:pointer;
+    color:#f33;
+}
+
+.simavr_io_num{
+    width:3em;
+    border:3px solid black;
+    background-color:#363;
+    color:#ff4;
+    font-size:17pt;
+    padding:5px;
+}
+
+.simavr_io_switch{
+    display:inline-block;
+    width:3em;
+    border:3px solid black;
+    font-size:17pt;
+    padding:5px;
+    cursor:pointer;
+}
+
+.simavr_io_switch_on{
+    background-color:#3f3;
+}
+
+.simavr_io_switch_off{
+    background-color:#f33;
+}
+
+.simavr_lcd_table{
+    border:1px solid black;
+}
+
+.simavr_lcd_cell{
+    border:1px solid black;
+    color:#eee;
+    font-family:monospace;
+    min-width:1em;
+    text-align:center;
+    height:2em;
+    padding:0;
+    margin:0;
+}
+.simavr_lcd_cell_cursor{
+    background-color:#336;
+}
+.simavr_lcd_cell_normal{
+    background-color:#363;
+}
